@@ -1,11 +1,10 @@
 # next steps - net8 osx-arm64 migration
 
-1. Commit phase-0 tracking scaffold.
-2. Add `DuckGame/DuckGame.Net8.csproj` and `Steam/Steam.Net8.csproj`.
-3. Wire minimal compile constants (`DUCKGAME_NET8`, `NO_STEAM`) and source include/exclude sets.
-4. Run `dotnet restore/build` and fix first wave of compile errors (namespaces/types).
-5. Add net8 startup stub for `DGWindows.WindowsPlatformStartup`.
-6. Implement no-steam guards and non-Windows crash-path safeguards.
-7. Add net8-safe texture/font pathways.
-8. Stage mac native publish assets and publish script.
-9. Run verification matrix and iterate until bootable publish path is stable.
+1. Install .NET SDK 8.x on this machine (hard blocker).
+2. Run `dotnet restore DuckGame/DuckGame.Net8.csproj` and resolve package/reference errors.
+3. Run `dotnet build DuckGame/DuckGame.Net8.csproj -c Debug` and fix compile issues until clean.
+4. Place required mac arm64 native dylibs in `DuckGame/build/native/osx-arm64/`.
+5. Run `dotnet publish DuckGame/DuckGame.Net8.csproj -c Release -r osx-arm64 --self-contained true`.
+6. Perform runtime smoke test on macOS arm64 (menu + local match).
+7. Iterate font/texture/runtime fixes based on smoke results.
+8. Finalize phase-5 stabilization notes and update tracking files to done.

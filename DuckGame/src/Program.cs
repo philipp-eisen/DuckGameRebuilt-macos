@@ -152,6 +152,9 @@ namespace DuckGame
             FilePath = gameAssembly.Location;
             FileName = Path.GetFileName(FilePath);
             GameDirectory = FilePath.Substring(0, FilePath.Length - FileName.Length);
+#if NO_STEAM
+            MonoMain.disableSteam = true;
+#endif
             if (args.Contains("-linux") || WindowsPlatformStartup.isRunningWine && !args.Contains("-nolinux"))
             {
                 wineVersion = WindowsPlatformStartup.wineVersion;
@@ -277,7 +280,7 @@ namespace DuckGame
                     StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
                     streamWriter.WriteLine(str);
                     streamWriter.Close();
-                    Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
+                    TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
                 }
             }
             return null;
@@ -697,6 +700,7 @@ namespace DuckGame
                 }
             }
             enteredMain = true;
+#if !NO_STEAM
             if (!MonoMain.disableSteam)
             {
                 if (MonoMain.breakSteam || !Steam.InitializeCore())
@@ -704,8 +708,10 @@ namespace DuckGame
                 else
                     Steam.Initialize();
             }
+#endif
             try
             {
+#if !NO_STEAM
                 if (Steam.IsInitialized())
                 {
                     steamBuildID = Steam.GetGameBuildID();
@@ -719,6 +725,9 @@ namespace DuckGame
                 }
                 else
                     steamBuildID = -1;
+#else
+                steamBuildID = -1;
+#endif
             }
             catch (Exception) { }
         label_109:
@@ -786,6 +795,15 @@ namespace DuckGame
         }
         private static void OnOutputDebugStringHandler(int pid, string text) => steamInitializeError = steamInitializeError + text + "\n";
 
+        private static void TryStartCrashWindow(string args)
+        {
+            if (!OperatingSystem.IsWindows())
+                return;
+            if (!File.Exists("CrashWindow.exe"))
+                return;
+            Process.Start("CrashWindow.exe", args);
+        }
+
         public static void RemotePlayConnected() => Windows_Audio.forceMode = AudioMode.DirectSound;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -817,7 +835,7 @@ namespace DuckGame
                 StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
                 streamWriter.WriteLine(pLogMessage);
                 streamWriter.Close();
-                Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
+                TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
             }
         }
         public static string ProcessExceptionString(Exception e)
@@ -941,7 +959,9 @@ namespace DuckGame
                     {
                         Send.ImmediateUnreliableBroadcast(new NMClientCrashed());
                         Send.ImmediateUnreliableBroadcast(new NMClientCrashed());
+#if !NO_STEAM
                         Steam.Update();
+#endif
                         Thread.Sleep(16);
                     }
                     crashed = true;
@@ -1079,15 +1099,15 @@ namespace DuckGame
                 }
                 catch (Exception) { }
                 num = 6;
-                if (File.Exists("CrashWindow.exe"))
+                if (OperatingSystem.IsWindows() && File.Exists("CrashWindow.exe"))
                 {
                     try
                     {
                         if (pModConfig != null)
-                            Process.Start("CrashWindow.exe", "-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
+                            TryStartCrashWindow("-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
                                 + " -modName " + str2 + " -source " + exception.Source + " -commandLine \"" + commandLine + "\" -executable \"" + Application.ExecutablePath + "\" " + DG.GetCrashWindowString(pException, pModConfig, str1));
                         else
-                            Process.Start("CrashWindow.exe", "-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
+                            TryStartCrashWindow("-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
                                 + " -modName " + str2 + " -source " + exception.Source + " -commandLine \"" + commandLine + "\" -executable \"" + Application.ExecutablePath + "\" " + DG.GetCrashWindowString(pException, pAssembly, str1));
                     }
                     catch (Exception ex)
@@ -1578,8 +1598,13 @@ namespace DuckGame
                     discord =  someprivacy ? "#Privacy" : $"<@{DiscordRichPresence.client.CurrentUser.ID}>";
                 }
 
+#if NO_STEAM
+                string steamid = "N/A";
+                string username = "N/A";
+#else
                 string steamid = someprivacy ? "#Privacy" : Steam.user?.id.ToString() ?? "N/A";
                 string username = someprivacy ? "#Privacy" : Steam.user?.name ?? "N/A";
+#endif
 
                 string os = "UNKNOWN";
                 try

@@ -1,7 +1,6 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using XnaToFna;
 
@@ -32,7 +31,8 @@ namespace DuckGame
                 string str = path.Substring(0, path.Length - 4);
                 if (path.EndsWith(".png"))
                 {
-                    Texture2D texture2D = TextureConverter.LoadPNGWithPinkAwesomeness(Graphics.device, new Bitmap(new MemoryStream(data)), true);
+                    using MemoryStream stream = new MemoryStream(data);
+                    Texture2D texture2D = TextureConverter.LoadPNGWithPinkAwesomeness(Graphics.device, stream, true);
                     _textures[str] = texture2D;
                     Content.textures[str] = (Tex2D)texture2D;
                 }
