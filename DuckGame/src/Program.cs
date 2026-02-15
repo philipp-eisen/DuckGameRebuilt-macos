@@ -22,7 +22,9 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
+#if DUCKGAME_NET8
 using System.Runtime.Loader;
+#endif
 
 namespace DuckGame
 {
