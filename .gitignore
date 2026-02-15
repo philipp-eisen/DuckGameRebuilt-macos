@@ -376,3 +376,10 @@ version.txt
 /DuckGame/SlnPath.txt
 .idea
 DGR-Mod/DGR-Mod.dll
+
+# Local native build and dependency artifacts
+FNA/lib/FAudio/build/
+FNA/lib/FNA3D/build/
+FNA/lib/Theorafile/libtheorafile.dylib
+deps/System.Memory.4.5.5/
+deps/System.Runtime.CompilerServices.Unsafe.6.0.0/
