@@ -88,3 +88,14 @@ Notes:
 
 * Publish output path: `DuckGame/bin/Release/net8.0/osx-arm64/publish/`
 * Steam initialization on macOS depends on AppID platform support in Steam. If the AppID is not mac-enabled, the build can still publish/run but Steam login/features may fail at runtime.
+
+Packaging helpers:
+
+* Build a standalone `.app` bundle:
+  * `bash scripts/package-macos-app.sh`
+* Build a distributable `.dmg` (includes the `.app` + `/Applications` shortcut):
+  * `bash scripts/package-macos-dmg.sh`
+* Use a custom app icon source (optional):
+  * `bash scripts/package-macos-app.sh --icon-source deps/Content/aslogo.png`
+* Output path for packaging artifacts:
+  * `dist/macos/`
