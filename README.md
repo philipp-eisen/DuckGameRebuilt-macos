@@ -42,3 +42,49 @@ Note: your IDE will scream at you with 200+ warnings when building, which is nor
   * `msbuild -m -p:Configuration=Debug`
 * Run the game (will crash unless Steam is currently running)
   * `mono ./bin/DuckGame.exe`
+
+### Building on macOS (Apple Silicon)
+
+Prerequisites:
+
+* macOS with Xcode Command Line Tools installed (`xcode-select --install`)
+* Homebrew + .NET 8 SDK (install with Homebrew):
+  * `brew update`
+  * `brew install dotnet@8`
+  * If `dotnet` is not on your `PATH`, add it:
+    * `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc`
+    * `source ~/.zshrc`
+  * Verify installation: `dotnet --version` (should start with `8.`)
+* Native runtime libraries present in `DuckGame/build/native/osx-arm64/`:
+  * `libSDL2-2.0.0.dylib`
+  * `libFNA3D.0.dylib`
+  * `libFAudio.0.dylib`
+  * `libtheorafile.dylib`
+* Managed compatibility dependencies present in `deps/`:
+  * `System.Memory.4.5.5/lib/net461/System.Memory.dll`
+  * `System.Runtime.CompilerServices.Unsafe.6.0.0/lib/net461/System.Runtime.CompilerServices.Unsafe.dll`
+
+If the two managed dependency folders are missing, install them with NuGet:
+
+```bash
+nuget install System.Memory -Version 4.5.5 -OutputDirectory deps
+nuget install System.Runtime.CompilerServices.Unsafe -Version 6.0.0 -OutputDirectory deps
+```
+
+Publish the macOS build:
+
+```bash
+bash scripts/publish-macos-arm64.sh
+```
+
+Run it from the publish folder:
+
+```bash
+cd DuckGame/bin/Release/net8.0/osx-arm64/publish
+./DuckGame
+```
+
+Notes:
+
+* Publish output path: `DuckGame/bin/Release/net8.0/osx-arm64/publish/`
+* Steam initialization on macOS depends on AppID platform support in Steam. If the AppID is not mac-enabled, the build can still publish/run but Steam login/features may fail at runtime.
