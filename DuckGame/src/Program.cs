@@ -959,7 +959,7 @@ namespace DuckGame
 
         private static void TryStartCrashWindow(string args)
         {
-            if (!OperatingSystem.IsWindows())
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return;
             if (!File.Exists("CrashWindow.exe"))
                 return;
@@ -1305,7 +1305,7 @@ namespace DuckGame
                 }
                 catch (Exception) { }
                 num = 6;
-                if (OperatingSystem.IsWindows() && File.Exists("CrashWindow.exe"))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && File.Exists("CrashWindow.exe"))
                 {
                     try
                     {
