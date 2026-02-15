@@ -10,7 +10,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DefineConstants>TRACE;DuckGame;DUCKGAME_NET8;NO_STEAM</DefineConstants>
+    <DefineConstants>TRACE;DuckGame;DUCKGAME_NET8</DefineConstants>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">osx-arm64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
@@ -40,6 +40,7 @@
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.9" />
+    <PackageReference Include="Steamworks.NET" Version="20.1.0" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
@@ -82,10 +83,6 @@
     </Reference>
     <Reference Include="NVorbis.NAudioSupport">
       <HintPath>lib/NVorbis.NAudioSupport.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="Steamworks.NET">
-      <HintPath>../deps/Steamworks.NET.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="System.Memory">

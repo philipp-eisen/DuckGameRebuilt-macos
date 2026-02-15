@@ -47,6 +47,9 @@
   - [done] publish script now cleans output directory before publish to avoid stale artifacts
   - [in_progress] manual in-game validation (menu navigation and local match)
   - [done] no-Steam startup crash chain currently suppressed through 60s title-screen smoke run
+  - [done] pivoted net8 lane back to Steam-enabled build path (removed `NO_STEAM` define for net8)
+  - [done] Steamworks.NET arm64 load blocker addressed by publish-time AnyCPU metadata patching
+  - [done] Steam native loader blocker addressed by shipping `steam_api64.dylib`/`libsteam_api64.dylib` aliases from bundled `libsteam_api.dylib`
   - [pending] finalize warning triage strategy for long-tail net8 warnings
 
 ## Verification log
@@ -63,3 +66,4 @@
 - smoke test (`DuckGame/bin/Release/net8.0/osx-arm64/publish/DuckGame`) -> process alive after 8 seconds, zero-line `run.log`
 - attempted strict Steam assembly removal from publish output -> startup stack overflow in assembly resolve path; reverted to Steam-managed assembly presence with `NO_STEAM` runtime guards, smoke test green again
 - latest runtime smoke (`DuckGame/bin/Release/net8.0/osx-arm64/publish/DuckGame`, 60s timeout) stayed alive with no fatal exception in `ducklog.txt`
+- steam-enabled smoke (`DuckGame/bin/Release/net8.0/osx-arm64/publish/DuckGame`, 60s timeout) now stays alive; `run.log` shows Steam API native load succeeds, while `SteamAPI_Init` fails gracefully outside Steam client session (`Steam INIT Failed!` in `ducklog.txt`)

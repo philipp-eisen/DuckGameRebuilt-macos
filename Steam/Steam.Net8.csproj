@@ -11,9 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Steamworks.NET">
-      <HintPath>../deps/Steamworks.NET.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <PackageReference Include="Steamworks.NET" Version="20.1.0" />
   </ItemGroup>
 </Project>

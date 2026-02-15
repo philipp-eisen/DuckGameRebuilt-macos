@@ -144,6 +144,11 @@ namespace DuckGame
             IsLinuxD = (p == 4) || (p == 6) || (p == 128);
 #if DUCKGAME_NET8
             TryPreloadManagedDependency("Steamworks.NET.dll");
+            TryPreloadManagedDependency("DGSteam.dll");
+#endif
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
+#if DUCKGAME_NET8
+            AssemblyLoadContext.Default.Resolving += ResolveNet8ManagedDependency;
 #endif
             if (IsLinuxD)
             {
@@ -169,10 +174,6 @@ namespace DuckGame
                 AppDomain.CurrentDomain.AssemblyLoad += new AssemblyLoadEventHandler(WindowsPlatformStartup.AssemblyLoad);
             Application.ThreadException += new System.Windows.Forms.ThreadExceptionEventHandler(UnhandledThreadExceptionTrapper);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(WindowsPlatformStartup.UnhandledExceptionTrapper);
-            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
-#if DUCKGAME_NET8
-            AssemblyLoadContext.Default.Resolving += ResolveNet8ManagedDependency;
-#endif
             TaskScheduler.UnobservedTaskException += UnhandledExceptionUnobserved;
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
@@ -210,7 +211,7 @@ namespace DuckGame
             {
                 return false;
             }
-#if !NO_STEAM
+#if !NO_STEAM && !DUCKGAME_NET8
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
                 while (tries > 0)
@@ -259,6 +260,11 @@ namespace DuckGame
         {
             if (args.Name.StartsWith("Steamworks.NET,", StringComparison.Ordinal))
             {
+#if DUCKGAME_NET8
+                Assembly steamworksAssembly = TryLoadManagedDependency("Steamworks.NET.dll");
+                if (steamworksAssembly != null)
+                    return steamworksAssembly;
+#else
                 string steamworksAssemblyPath = Path.Combine(AppContext.BaseDirectory, "Steamworks.NET.dll");
                 if (File.Exists(steamworksAssemblyPath))
                 {
@@ -270,12 +276,18 @@ namespace DuckGame
                     {
                     }
                 }
+#endif
             }
             if (args.Name.StartsWith("DGSteam,", StringComparison.Ordinal) || args.Name.StartsWith("Steam,", StringComparison.Ordinal))
             {
                 Assembly steamAssembly = Assembly.GetAssembly(typeof(Steam));
                 if (steamAssembly != null)
                     return steamAssembly;
+#if DUCKGAME_NET8
+                steamAssembly = TryLoadManagedDependency("DGSteam.dll");
+                if (steamAssembly != null)
+                    return steamAssembly;
+#else
                 string steamAssemblyPath = Path.Combine(AppContext.BaseDirectory, "DGSteam.dll");
                 if (File.Exists(steamAssemblyPath))
                 {
@@ -287,6 +299,7 @@ namespace DuckGame
                     {
                     }
                 }
+#endif
             }
             if (!enteredMain)
                 return null;
@@ -843,12 +856,27 @@ namespace DuckGame
 #if DUCKGAME_NET8
         private static Assembly TryLoadManagedDependency(string fileName)
         {
+            string assemblySimpleName = Path.GetFileNameWithoutExtension(fileName);
+            foreach (Assembly loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (string.Equals(loadedAssembly.GetName().Name, assemblySimpleName, StringComparison.OrdinalIgnoreCase))
+                    return loadedAssembly;
+            }
             string assemblyPath = Path.Combine(AppContext.BaseDirectory, fileName);
             if (!File.Exists(assemblyPath))
                 return null;
             try
             {
                 return AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+            }
+            catch (FileLoadException)
+            {
+                foreach (Assembly loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (string.Equals(loadedAssembly.GetName().Name, assemblySimpleName, StringComparison.OrdinalIgnoreCase))
+                        return loadedAssembly;
+                }
+                return null;
             }
             catch
             {

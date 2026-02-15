@@ -13,6 +13,10 @@ dotnet publish "$ROOT_DIR/DuckGame/DuckGame.Net8.csproj" \
   --self-contained true \
   /p:PublishSingleFile=false
 
+if [ -f "$PUBLISH_DIR/Steamworks.NET.dll" ]; then
+  dotnet run --project "$ROOT_DIR/scripts/SteamworksPatcher/SteamworksPatcher.csproj" -- "$PUBLISH_DIR/Steamworks.NET.dll"
+fi
+
 if compgen -G "$NATIVE_DIR/*.dylib" > /dev/null; then
   cp "$NATIVE_DIR"/*.dylib "$PUBLISH_DIR"/
 fi
@@ -31,12 +35,15 @@ for asset in "lang.txt" "gamecontrollerdb.txt" "MonoFont.ttf"; do
   fi
 done
 
-if [ -f "$ROOT_DIR/deps/Steamworks.NET.dll" ]; then
-  cp "$ROOT_DIR/deps/Steamworks.NET.dll" "$PUBLISH_DIR"/
+if [ -d "$ROOT_DIR/deps/steam_api.bundle" ]; then
+  cp -R "$ROOT_DIR/deps/steam_api.bundle" "$PUBLISH_DIR/steam_api.bundle"
+elif [ -d "$ROOT_DIR/deps/OSX-Linux-x64/steam_api.bundle" ]; then
+  cp -R "$ROOT_DIR/deps/OSX-Linux-x64/steam_api.bundle" "$PUBLISH_DIR/steam_api.bundle"
 fi
 
-if [ -f "$ROOT_DIR/deps/Steamworks.NET.dll.config" ]; then
-  cp "$ROOT_DIR/deps/Steamworks.NET.dll.config" "$PUBLISH_DIR"/
+if [ -f "$PUBLISH_DIR/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" ]; then
+  cp "$PUBLISH_DIR/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" "$PUBLISH_DIR/steam_api64.dylib"
+  cp "$PUBLISH_DIR/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" "$PUBLISH_DIR/libsteam_api64.dylib"
 fi
 
 if [ -f "$PUBLISH_DIR/libSDL2-2.0.0.dylib" ]; then

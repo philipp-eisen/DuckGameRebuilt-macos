@@ -45,3 +45,7 @@
 - `ducklog.txt` still logs repeated `GlobalData` parse warnings; these are non-fatal but should be triaged for save-data compatibility.
 - Music load can still report missing `NVorbis` in logs during startup, indicating a likely packaging/reference gap that may impact audio even when runtime no longer crashes.
 - `TeamSelect2` remained a recurring no-Steam crash source (type-load paths via title/duck update). Current no-Steam stabilization prevents title-screen transitions into `TeamSelect2` to keep runtime alive; multiplayer/team-select functionality is therefore intentionally limited in this lane for now.
+- User requirement changed: keep TeamSelect2 playable; migration pivoted back to Steam-enabled net8 lane instead of deeper no-Steam decoupling.
+- `Steamworks.NET` managed assembly from package/reference is PE32+ x64 and throws `FileLoadException` on `osx-arm64` net8 unless module metadata is patched to AnyCPU. A publish-time Mono.Cecil patch (I386 + clear 32-bit flags) resolves this load blocker.
+- Steam native bootstrap on macOS required `steam_api64` library names; copying bundle binary aliases (`steam_api64.dylib` and `libsteam_api64.dylib`) from `steam_api.bundle/Contents/MacOS/libsteam_api.dylib` resolved `DllNotFoundException`.
+- After managed+native Steam fixes, runtime reaches normal startup loop on arm64 and survives 60-second smoke runs; when not launched from a live Steam session, `SteamAPI_Init` fails gracefully and logs `Steam INIT Failed!`.
