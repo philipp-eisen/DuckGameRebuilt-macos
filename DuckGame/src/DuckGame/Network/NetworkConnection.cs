@@ -89,14 +89,6 @@ namespace DuckGame
             if (isHost)
                 str1 += "(H)";
             string str2 = null;
-#if NO_STEAM
-            if (!hasRealName || data == null)
-                str2 = "LAN USER";
-            else if (Network.activeNetwork.core is NCBasic)
-                str2 = name + "," + (data as IPEndPoint).ToString();
-            else
-                str2 = name;
-#else
             if (!hasRealName || data == null)
             {
                 if (data is User userData)
@@ -110,7 +102,6 @@ namespace DuckGame
                 str2 = name + "," + (data as User).id.ToString();
             else if (Network.activeNetwork.core is NCBasic)
                 str2 = name + "," + (data as IPEndPoint).ToString();
-#endif
             str2.Replace("|", "(");
             str2.Replace("@", "$");
             string str3 = str1 + str2;
@@ -303,13 +294,9 @@ namespace DuckGame
                 GhostManager.context.Clear(this);
             if (NetworkDebugger.enabled)
                 debuggerContext.Reset();
-#if NO_STEAM
-            string userID = "local";
-#else
             string userID = "local";
             if (!MonoMain.disableSteam && Steam.user != null)
                 userID = Steam.user.id.ToString();
-#endif
             DevConsole.Log(DCSection.Connection, "@disconnect Reset called on " + identifier + "(" + userID + ", " + reason + ")");
         }
 

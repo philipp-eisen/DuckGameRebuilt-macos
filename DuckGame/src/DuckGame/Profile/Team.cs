@@ -95,10 +95,8 @@ namespace DuckGame
                 if (profile != null && profile.muteHat)
                     return true;
                 bool filter = Options.Data.hatFilter == 2;
-#if !NO_STEAM
                 if (Options.Data.hatFilter == 1 && customConnection.data is User && (customConnection.data as User).relationship != FriendRelationship.Friend)
                     filter = true;
-#endif
                 return filter;
             }
         }

@@ -158,11 +158,7 @@ namespace DuckGame
         {
             get
             {
-#if NO_STEAM
-                return saveDirectory;
-#else
                 return Steam.user != null ? saveDirectory + Steam.user.id.ToString() + "/" : saveDirectory;
-#endif
             }
         }
 
@@ -696,11 +692,7 @@ namespace DuckGame
         {
             try
             {
-#if NO_STEAM
-                return false;
-#else
                 return Steam.user != null && Path.GetDirectoryName(path).Contains(Steam.user.id.ToString());
-#endif
             }
             catch (Exception)
             {

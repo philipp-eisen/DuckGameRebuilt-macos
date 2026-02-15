@@ -13,10 +13,8 @@ namespace DuckGame
 
         public WorkshopMetaData()
         {
-#if !NO_STEAM
             if (Steam.user != null)
                 author = Steam.user.name;
-#endif
             Reset();
         }
 

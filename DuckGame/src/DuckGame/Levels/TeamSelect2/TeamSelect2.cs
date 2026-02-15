@@ -88,11 +88,7 @@ namespace DuckGame
         private bool _singlePlayer;
         private int activePlayers;
         private static bool _attemptingToInvite = false;
-#if !NO_STEAM
         private static List<User> _invitedUsers = new List<User>();
-#else
-        private static List<object> _invitedUsers = new List<object>();
-#endif
         private static bool _didHost = false;
         private static bool _copyInviteLink = false;
         public static bool showEightPlayerSelected = false;
@@ -291,13 +287,11 @@ namespace DuckGame
                     _modifierStatus[unlock.id] = true;
                 }
             }
- #if !NO_STEAM
             if (Network.isActive && Network.isServer && Network.activeNetwork.core.lobby != null)
             {
                 Network.activeNetwork.core.lobby.SetLobbyData("modifiers", flag ? "true" : "false");
                 Network.activeNetwork.core.lobby.SetLobbyData("customLevels", Editor.customLevelCount.ToString());
             }
-#endif
             return flag;
         }
 
@@ -1269,7 +1263,6 @@ namespace DuckGame
             _copyInviteLink = false;
         }
 
-#if !NO_STEAM
         public static void InvitedFriend(User u)
         {
             if (u == null)
@@ -1280,7 +1273,6 @@ namespace DuckGame
             Main.SpecialCode = "Invited Friend (" + u.id.ToString() + ")";
             DevConsole.Log(DCSection.Connection, Main.SpecialCode);
         }
-#endif
 
         public static bool CheckForCTeams(Profile p2)
         {
@@ -1570,15 +1562,11 @@ namespace DuckGame
                 _attemptingToInvite = true;
             }
             if (_attemptingToInvite && Network.isActive
-#if !NO_STEAM
                 && (!_didHost || Steam.lobby != null && !Steam.lobby.processing)
-#endif
                 )
             {
-#if !NO_STEAM
                 foreach (User invitedUser in _invitedUsers)
                     Steam.InviteUser(invitedUser, Steam.lobby);
-#endif
                 _invitedUsers.Clear();
                 _attemptingToInvite = false;
             }

@@ -702,7 +702,6 @@ namespace DuckGame
                     return linkedProfile.name;
                 if (keepSetName || steamID == 0UL || slotType == SlotType.Local)
                     return _name;
-#if !NO_STEAM
                 if (Steam.user != null && (long)steamID == (long)Steam.user.id)
                     return Steam.user.name;
                 if (lastKnownName != null)
@@ -719,11 +718,6 @@ namespace DuckGame
                     }
                 }
                 return "STEAM PROFILE";
-#else
-                if (lastKnownName != null)
-                    return lastKnownName;
-                return _name;
-#endif
             }
             set => _name = value;
         }
@@ -754,16 +748,12 @@ namespace DuckGame
         {
             get
             {
-#if NO_STEAM
-                return new Random(90210);
-#else
                 if (Steam.user == null)
                     return new Random(90210);
                 Random steamGenerator = new Random(Math.Abs((int)(Steam.user.id % int.MaxValue)));
                 for (int index = 0; index < (int)(Steam.user.id % 252UL); ++index)
                     Rando.Int(100);
                 return steamGenerator;
-#endif
             }
         }
 
@@ -1176,11 +1166,9 @@ namespace DuckGame
             {
                 if (_linkedProfile != null)
                     return _linkedProfile.xp;
-#if !NO_STEAM
                 if (Steam.user == null || this != Profiles.experienceProfile || (int)Steam.GetStat(nameof(xp)) != 0)
                     return _xp;
                 Steam.SetStat(nameof(xp), _xp);
-#endif
                 return _xp;
             }
             set
@@ -1189,10 +1177,8 @@ namespace DuckGame
                     _linkedProfile.xp = value;
                 if (MonoMain.logFileOperations && _xp != value)
                     DevConsole.Log(DCSection.General, "Profile(" + name != null ? name : ").xp set(" + xp.ToString() + ")");
-#if !NO_STEAM
                 if (Steam.user != null && this == Profiles.experienceProfile)
                     Steam.SetStat(nameof(xp), value);
-#endif
                 _xp = value;
             }
         }
@@ -1363,11 +1349,7 @@ namespace DuckGame
             {
                 if (connection == DuckNetwork.localConnection && (!Network.isActive || !Network.lanMode))
                     return DG.localID;
-#if NO_STEAM
-                return _steamID;
-#else
                 return connection != null && connection.data is User ? (connection.data as User).id : _steamID;
-#endif
             }
             set
             {

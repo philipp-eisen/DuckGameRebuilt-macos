@@ -161,9 +161,6 @@ namespace DuckGame
             FilePath = gameAssembly.Location;
             FileName = Path.GetFileName(FilePath);
             GameDirectory = FilePath.Substring(0, FilePath.Length - FileName.Length);
-#if NO_STEAM
-            MonoMain.disableSteam = true;
-#endif
             if (args.Contains("-linux") || WindowsPlatformStartup.isRunningWine && !args.Contains("-nolinux"))
             {
                 wineVersion = WindowsPlatformStartup.wineVersion;
@@ -211,7 +208,7 @@ namespace DuckGame
             {
                 return false;
             }
-#if !NO_STEAM && !DUCKGAME_NET8
+#if !DUCKGAME_NET8
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
                 while (tries > 0)
@@ -749,7 +746,6 @@ namespace DuckGame
                 }
             }
             enteredMain = true;
-#if !NO_STEAM
             if (!MonoMain.disableSteam)
             {
                 if (MonoMain.breakSteam || !Steam.InitializeCore())
@@ -757,10 +753,8 @@ namespace DuckGame
                 else
                     Steam.Initialize();
             }
-#endif
             try
             {
-#if !NO_STEAM
                 if (Steam.IsInitialized())
                 {
                     steamBuildID = Steam.GetGameBuildID();
@@ -774,9 +768,6 @@ namespace DuckGame
                 }
                 else
                     steamBuildID = -1;
-#else
-                steamBuildID = -1;
-#endif
             }
             catch (Exception) { }
         label_109:
@@ -1054,9 +1045,7 @@ namespace DuckGame
                     {
                         Send.ImmediateUnreliableBroadcast(new NMClientCrashed());
                         Send.ImmediateUnreliableBroadcast(new NMClientCrashed());
-#if !NO_STEAM
                         Steam.Update();
-#endif
                         Thread.Sleep(16);
                     }
                     crashed = true;
@@ -1693,13 +1682,8 @@ namespace DuckGame
                     discord =  someprivacy ? "#Privacy" : $"<@{DiscordRichPresence.client.CurrentUser.ID}>";
                 }
 
-#if NO_STEAM
-                string steamid = "N/A";
-                string username = "N/A";
-#else
                 string steamid = someprivacy ? "#Privacy" : Steam.user?.id.ToString() ?? "N/A";
                 string username = someprivacy ? "#Privacy" : Steam.user?.name ?? "N/A";
-#endif
 
                 string os = "UNKNOWN";
                 try

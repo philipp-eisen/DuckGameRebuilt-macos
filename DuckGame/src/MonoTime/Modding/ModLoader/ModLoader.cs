@@ -924,7 +924,6 @@ namespace DuckGame
             loadableMods = new Dictionary<string, ModConfiguration>();
             if (Directory.Exists(modDirectory))
             {
-#if !NO_STEAM
                 if (Steam.IsInitialized())
                 {
                     LoadingAction steamLoad = new LoadingAction();
@@ -964,7 +963,6 @@ namespace DuckGame
 
                     MonoMain.currentActionQueue.Enqueue(steamLoad);
                 }
-#endif
                 LoadingAction attemptLoadMods = new LoadingAction();
                 MonoMain.currentActionQueue.Enqueue(attemptLoadMods);
                 attemptLoadMods.action = () =>
