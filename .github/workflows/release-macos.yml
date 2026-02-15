@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      skip_notarize:
+        description: "Skip notarization (faster for testing)"
+        type: boolean
+        default: false
 
 jobs:
   build-sign-notarize:
@@ -81,12 +87,32 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          bun scripts/release-macos.ts \
-            --identity "$APPLE_SIGNING_IDENTITY" \
-            --version "${GITHUB_REF_NAME#v}"
+          ARGS=(--identity "$APPLE_SIGNING_IDENTITY")
 
-      # -- Upload DMG to GitHub Release --
+          # Use tag name as version, or 'dev' for dispatch runs
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            ARGS+=(--version "${GITHUB_REF_NAME#v}")
+          else
+            ARGS+=(--version "dev-$(git rev-parse --short HEAD)")
+          fi
+
+          # Skip notarization if requested via dispatch input
+          if [[ "${{ inputs.skip_notarize }}" == "true" ]]; then
+            ARGS+=(--skip-notarize)
+          fi
+
+          bun scripts/release-macos.ts "${ARGS[@]}"
+
+      # -- Upload DMG as artifact (always) --
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuckGameRebuilt-macos-arm64
+          path: dist/macos/DuckGameRebuilt-macos-arm64.dmg
+
+      # -- Upload DMG to GitHub Release (only on tag push) --
       - name: Upload DMG to release
+        if: github.ref_type == 'tag'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
