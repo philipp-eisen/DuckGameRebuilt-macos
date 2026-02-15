@@ -38,6 +38,7 @@ namespace DuckGame
 
         // this should be formatted like X.X.X where each X is a number
         public const string CURRENT_VERSION_ID = "1.4.7";
+        public const string DUCK_GAME_STORE_URL = "https://store.steampowered.com/app/312530/Duck_Game/";
 
         // do change this you know what you're doing -Lucky
         public const string CURRENT_VERSION_ID_FORMATTED = "v" + CURRENT_VERSION_ID;
@@ -539,9 +540,6 @@ namespace DuckGame
                     case "-nofullscreen":
                         MonoMain.noFullscreen = true;
                         break;
-                    case "-nosteam":
-                        MonoMain.disableSteam = true;
-                        break;
                     case "-steam":
                         MonoMain.launchedFromSteam = true;
                         break;
@@ -746,31 +744,9 @@ namespace DuckGame
                 }
             }
             enteredMain = true;
-            if (!MonoMain.disableSteam)
-            {
-                if (MonoMain.breakSteam || !Steam.InitializeCore())
-                    LogLine("Steam INIT Failed!");
-                else
-                    Steam.Initialize();
-            }
-            try
-            {
-                if (Steam.IsInitialized())
-                {
-                    steamBuildID = Steam.GetGameBuildID();
-                    Steam.RemotePlay += new Steam.RemotePlayDelegate(RemotePlayConnected);
-                    if (Steam.IsLoggedIn())
-                    {
-                        if (Steam.Authorize())
-                            goto label_109;
-                    }
-                    MonoMain.steamConnectionCheckFail = true;
-                }
-                else
-                    steamBuildID = -1;
-            }
-            catch (Exception) { }
-        label_109:
+            if (!EnsureSteamReady())
+                return;
+
             DeviceChangeNotifier.Start();
             DevConsole.Log("Starting Duck Game (" + DG.platform + ")...");
             if (DGRSettings.ControllerCount > 4)
@@ -812,6 +788,152 @@ namespace DuckGame
         {
             accumulatedElapsedTimefieldinfo.SetValue(g, t);
         }
+
+        private static bool EnsureSteamReady()
+        {
+            steamBuildID = -1;
+            try
+            {
+                if (MonoMain.breakSteam || !Steam.InitializeCore())
+                {
+                    string details = string.IsNullOrWhiteSpace(steamInitializeError)
+                        ? string.Empty
+                        : "\n\nDetails: " + steamInitializeError.Trim();
+                    return FailSteamStartup(
+                        "Steam failed to initialize.",
+                        "Make sure Steam is running, you are logged in, and the account owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL + details);
+                }
+
+                Steam.Initialize();
+            }
+            catch (Exception ex)
+            {
+                return FailSteamStartup(
+                    "Steam failed to initialize.",
+                    "Make sure Steam is running, you are logged in, and the account owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL + "\n\nDetails: " + ex.Message);
+            }
+
+            try
+            {
+                steamBuildID = Steam.GetGameBuildID();
+            }
+            catch
+            {
+                steamBuildID = -1;
+            }
+
+            try
+            {
+                Steam.RemotePlay += new Steam.RemotePlayDelegate(RemotePlayConnected);
+            }
+            catch
+            {
+            }
+
+            bool loggedIn = false;
+            bool authorized = false;
+            try
+            {
+                loggedIn = Steam.IsLoggedIn();
+                if (loggedIn)
+                    authorized = Steam.Authorize();
+            }
+            catch
+            {
+            }
+
+            if (!loggedIn)
+            {
+                MonoMain.steamConnectionCheckFail = true;
+                return FailSteamStartup(
+                    "Steam is not logged in.",
+                    "Sign in to Steam with an account that owns Duck Game, then relaunch.\n\nStore: " + DUCK_GAME_STORE_URL);
+            }
+
+            if (!authorized)
+            {
+                MonoMain.steamConnectionCheckFail = true;
+                string guidance = "No valid Duck Game license was found for the current Steam account."
+                    + "\n\nSign in with an account that owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL;
+                if (IsMacOSRuntime())
+                    guidance += "\n\nIf Steam reports 'Invalid Platform' for this AppID, Steam authorization cannot succeed on macOS.";
+                return FailSteamStartup("Steam authorization failed.", guidance);
+            }
+
+            MonoMain.steamConnectionCheckFail = false;
+            return true;
+        }
+
+        private static bool FailSteamStartup(string reason, string guidance)
+        {
+            string title = "Duck Game Rebuilt - Steam Required";
+            string message = reason + "\n\n" + guidance;
+            LogLine(title);
+            LogLine(message);
+            TryShowSteamStartupDialog(title, message);
+            Environment.ExitCode = 1;
+            return false;
+        }
+
+        private static void TryShowSteamStartupDialog(string title, string message)
+        {
+            try
+            {
+                Console.Error.WriteLine(title);
+                Console.Error.WriteLine(message);
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (IsMacOSRuntime())
+                {
+                    string scriptPath = Path.Combine(Path.GetTempPath(), "duckgame-steam-startup-error.applescript");
+                    string script = "display alert \"" + EscapeAppleScriptString(title) + "\" message \"" + EscapeAppleScriptString(message) + "\" as critical";
+                    File.WriteAllText(scriptPath, script);
+                    ProcessStartInfo startInfo = new ProcessStartInfo("osascript", "\"" + scriptPath + "\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    Process.Start(startInfo);
+                    return;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                MessageBox.Show(title + "\n\n" + message);
+            }
+            catch
+            {
+            }
+        }
+
+        private static bool IsMacOSRuntime()
+        {
+#if DUCKGAME_NET8
+            return OperatingSystem.IsMacOS();
+#else
+            PlatformID platform = Environment.OSVersion.Platform;
+            return platform == PlatformID.MacOSX || (platform == PlatformID.Unix && Directory.Exists("/Applications") && Directory.Exists("/System/Library"));
+#endif
+        }
+
+        private static string EscapeAppleScriptString(string value)
+        {
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r", string.Empty)
+                .Replace("\n", "\\n");
+        }
+
         public static string GetDefaultWindowTitle()
         {
             string windowTitle = string.Empty;
