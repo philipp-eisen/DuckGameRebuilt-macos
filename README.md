@@ -58,16 +58,7 @@ Prerequisites:
     - `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc`
     - `source ~/.zshrc`
   - Verify installation: `dotnet --version` (should start with `8.`)
-- Managed compatibility dependencies present in `deps/`:
-  - `System.Memory.4.5.5/lib/net461/System.Memory.dll`
-  - `System.Runtime.CompilerServices.Unsafe.6.0.0/lib/net461/System.Runtime.CompilerServices.Unsafe.dll`
-
-If the two managed dependency folders are missing, install them with NuGet:
-
-```bash
-nuget install System.Memory -Version 4.5.5 -OutputDirectory deps
-nuget install System.Runtime.CompilerServices.Unsafe -Version 6.0.0 -OutputDirectory deps
-```
+- No extra managed compatibility DLL setup is required for the net8 macOS build (`System.Memory` and `System.Runtime.CompilerServices.Unsafe` come from the .NET 8 shared framework).
 
 Publish the macOS build:
 
