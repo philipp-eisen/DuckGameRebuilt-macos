@@ -323,6 +323,9 @@ namespace DuckGame
             Profile p1 = null;
             ulong num1 = 0;
             numExperienceProfiles = 0;
+#if NO_STEAM
+            p1 = Profiles.DefaultPlayer1;
+#else
             if (Steam.user == null)
             {
                 p1 = Profiles.DefaultPlayer1;
@@ -340,6 +343,7 @@ namespace DuckGame
                         p1 = profile;
                 }
             }
+#endif
             if (numExperienceProfiles == 0)
             {
                 Options.Data.defaultAccountMerged = true;
@@ -517,9 +521,13 @@ namespace DuckGame
             string name = p.name;
             if (p.steamID != 0UL)
             {
+#if NO_STEAM
+                return null;
+#else
                 if (Steam.user == null || (long)p.steamID != (long)DG.localID)
                     return null;
                 name = p.steamID.ToString();
+#endif
             }
             return DuckFile.profileDirectory + DuckFile.ReplaceInvalidCharacters(name) + ".pro";
         }
@@ -588,11 +596,13 @@ namespace DuckGame
                 node1.Add(node22);
                 DXMLNode node23 = new DXMLNode("SteamID", p.steamID);
                 node1.Add(node23);
+#if !NO_STEAM
                 if (p.steamID != 0UL && Steam.user != null && (long)p.steamID == (long)Steam.user.id)
                 {
                     DXMLNode node24 = new DXMLNode("LastKnownName", Steam.user.name);
                     node1.Add(node24);
                 }
+#endif
                 node1.Add(p.stats.Serialize());
                 string varValue = "";
                 foreach (string unlock in p.unlocks)

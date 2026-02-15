@@ -553,7 +553,7 @@ namespace DuckGame
         {
             if (!modsEnabled)
                 return "nomods";
-            using (SHA256Cng shA256Cng = new SHA256Cng())
+            using (SHA256 shA256Cng = SHA256.Create())
             {
                 _modString = string.Join("|", _sortedAccessibleMods.Where(a =>
                 {
@@ -924,6 +924,7 @@ namespace DuckGame
             loadableMods = new Dictionary<string, ModConfiguration>();
             if (Directory.Exists(modDirectory))
             {
+#if !NO_STEAM
                 if (Steam.IsInitialized())
                 {
                     LoadingAction steamLoad = new LoadingAction();
@@ -963,6 +964,7 @@ namespace DuckGame
 
                     MonoMain.currentActionQueue.Enqueue(steamLoad);
                 }
+#endif
                 LoadingAction attemptLoadMods = new LoadingAction();
                 MonoMain.currentActionQueue.Enqueue(attemptLoadMods);
                 attemptLoadMods.action = () =>

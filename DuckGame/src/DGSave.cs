@@ -10,6 +10,10 @@ namespace DuckGame
 
         public static void Initialize(bool pForce = false)
         {
+#if NO_STEAM
+            DevConsole.Log(DCSection.General, "DGSave.Initialize(NO_STEAM)");
+            return;
+#else
             if (Steam.IsInitialized() && Steam.user != null)
             {
                 if (Steam.user != null)
@@ -52,6 +56,7 @@ namespace DuckGame
             }
             else
                 DevConsole.Log(DCSection.General, "DGSave.Initialize(No Steam)");
+#endif
         }
 
         internal static void Move(

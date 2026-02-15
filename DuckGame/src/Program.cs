@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
+using System.Runtime.Loader;
 
 namespace DuckGame
 {
@@ -141,6 +142,9 @@ namespace DuckGame
             DevConsole.Log("|PINK|DGR |WHITE|Version " + gitVersion);
             int p = (int)Environment.OSVersion.Platform;
             IsLinuxD = (p == 4) || (p == 6) || (p == 128);
+#if DUCKGAME_NET8
+            TryPreloadManagedDependency("Steamworks.NET.dll");
+#endif
             if (IsLinuxD)
             {
                 MonoMain.enableThreadedLoading = false;
@@ -163,9 +167,12 @@ namespace DuckGame
             }
             else
                 AppDomain.CurrentDomain.AssemblyLoad += new AssemblyLoadEventHandler(WindowsPlatformStartup.AssemblyLoad);
-            Application.ThreadException += new ThreadExceptionEventHandler(UnhandledThreadExceptionTrapper);
+            Application.ThreadException += new System.Windows.Forms.ThreadExceptionEventHandler(UnhandledThreadExceptionTrapper);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(WindowsPlatformStartup.UnhandledExceptionTrapper);
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
+#if DUCKGAME_NET8
+            AssemblyLoadContext.Default.Resolving += ResolveNet8ManagedDependency;
+#endif
             TaskScheduler.UnobservedTaskException += UnhandledExceptionUnobserved;
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
@@ -203,6 +210,7 @@ namespace DuckGame
             {
                 return false;
             }
+#if !NO_STEAM
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
                 while (tries > 0)
@@ -236,6 +244,7 @@ namespace DuckGame
             catch
             {
             }
+#endif
             DevConsole.Log("|PINK|DGR |WHITE|Is Linux " + IsLinuxD.ToString() + " PlatformID " + p.ToString());
             gameAssembly = Assembly.GetExecutingAssembly();
             gameAssemblyName = gameAssembly.GetName().Name;
@@ -248,12 +257,39 @@ namespace DuckGame
 
         public static Assembly Resolve(object sender, ResolveEventArgs args)
         {
+            if (args.Name.StartsWith("Steamworks.NET,", StringComparison.Ordinal))
+            {
+                string steamworksAssemblyPath = Path.Combine(AppContext.BaseDirectory, "Steamworks.NET.dll");
+                if (File.Exists(steamworksAssemblyPath))
+                {
+                    try
+                    {
+                        return Assembly.LoadFrom(steamworksAssemblyPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            if (args.Name.StartsWith("DGSteam,", StringComparison.Ordinal) || args.Name.StartsWith("Steam,", StringComparison.Ordinal))
+            {
+                Assembly steamAssembly = Assembly.GetAssembly(typeof(Steam));
+                if (steamAssembly != null)
+                    return steamAssembly;
+                string steamAssemblyPath = Path.Combine(AppContext.BaseDirectory, "DGSteam.dll");
+                if (File.Exists(steamAssemblyPath))
+                {
+                    try
+                    {
+                        return Assembly.LoadFrom(steamAssemblyPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
             if (!enteredMain)
                 return null;
-            if (args.Name.StartsWith("Steam,"))
-            {
-                return Assembly.GetAssembly(typeof(Steam));
-            }
             if (!_attemptingResolve)
             {
                 bool flag = false;
@@ -804,6 +840,37 @@ namespace DuckGame
             Process.Start("CrashWindow.exe", args);
         }
 
+#if DUCKGAME_NET8
+        private static Assembly TryLoadManagedDependency(string fileName)
+        {
+            string assemblyPath = Path.Combine(AppContext.BaseDirectory, fileName);
+            if (!File.Exists(assemblyPath))
+                return null;
+            try
+            {
+                return AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static Assembly ResolveNet8ManagedDependency(AssemblyLoadContext context, AssemblyName assemblyName)
+        {
+            if (assemblyName.Name == "Steamworks.NET")
+                return TryLoadManagedDependency("Steamworks.NET.dll");
+            if (assemblyName.Name == "DGSteam" || assemblyName.Name == "Steam")
+                return TryLoadManagedDependency("DGSteam.dll");
+            return null;
+        }
+
+        private static void TryPreloadManagedDependency(string fileName)
+        {
+            TryLoadManagedDependency(fileName);
+        }
+#endif
+
         public static void RemotePlayConnected() => Windows_Audio.forceMode = AudioMode.DirectSound;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -813,7 +880,7 @@ namespace DuckGame
           IntPtr wParam,
           IntPtr lParam);
         [HandleProcessCorruptedStateExceptions, SecurityCritical]
-        public static void UnhandledThreadExceptionTrapper(object sender, ThreadExceptionEventArgs e)
+        public static void UnhandledThreadExceptionTrapper(object sender, System.Windows.Forms.ThreadExceptionEventArgs e)
         {
             HandleGameCrash(e.Exception);
         }

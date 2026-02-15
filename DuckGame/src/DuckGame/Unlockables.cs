@@ -143,7 +143,9 @@ namespace DuckGame
                         unlock.DoLock();
                 }
             }
+#if !NO_STEAM
             Steam.StoreStats();
+#endif
             return _pendingUnlocks.Count > 0;
         }
 

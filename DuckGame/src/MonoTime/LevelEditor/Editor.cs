@@ -5373,11 +5373,27 @@ namespace DuckGame
             {
                 AllBaseTypes[thingType] = Thing.GetAllTypes(thingType);
                 FieldInfo[] fields = thingType.GetFields(bindingAttr);
-                AllEditorFields[thingType] = fields.Where(val =>
-                        val.FieldType.IsGenericType && val.FieldType.GetGenericTypeDefinition() == editorFieldType)
-                    .ToArray();
-                AllStateFields[thingType] = fields.Where(val => val.FieldType == stateFieldType)
-                    .ToArray();
+                List<FieldInfo> editorFields = new List<FieldInfo>();
+                List<FieldInfo> stateFields = new List<FieldInfo>();
+                foreach (FieldInfo fieldInfo in fields)
+                {
+                    try
+                    {
+                        Type fieldType = fieldInfo.FieldType;
+                        if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == editorFieldType)
+                            editorFields.Add(fieldInfo);
+                        if (fieldType == stateFieldType)
+                            stateFields.Add(fieldInfo);
+                    }
+                    catch (Exception ex) when (
+                        ex is FileNotFoundException ||
+                        ex is TypeLoadException ||
+                        ex is NotSupportedException)
+                    {
+                    }
+                }
+                AllEditorFields[thingType] = editorFields;
+                AllStateFields[thingType] = stateFields.ToArray();
                 if (AllStateFields[thingType].Length > 0)
                 {
                     IDToType[key] = thingType;
@@ -5396,7 +5412,18 @@ namespace DuckGame
                     RegisterEditorFields(thingType);
                     foreach (ConstructorInfo constructor in thingType.GetConstructors())
                     {
-                        ParameterInfo[] parameters = constructor.GetParameters();
+                        ParameterInfo[] parameters;
+                        try
+                        {
+                            parameters = constructor.GetParameters();
+                        }
+                        catch (Exception ex) when (
+                            ex is FileNotFoundException ||
+                            ex is TypeLoadException ||
+                            ex is NotSupportedException)
+                        {
+                            continue;
+                        }
                         if (parameters.Length == 0)
                         {
                             LambdaExpression lambdaExpression = Expression.Lambda(typeof(ThingConstructor),
@@ -5407,26 +5434,35 @@ namespace DuckGame
                         }
                         else
                         {
-                            Expression[] expressionArray = new Expression[parameters.Length];
-                            object[] objArray = new object[parameters.Length];
-                            int index = 0;
-                            foreach (ParameterInfo parameterInfo in parameters)
+                            try
                             {
-                                Type parameterType = parameterInfo.ParameterType;
-                                objArray[index] =
-                                    parameterInfo.DefaultValue == null ||
-                                    !(parameterInfo.DefaultValue.GetType() != typeof(DBNull))
-                                        ? GetDefaultValue(parameterType)
-                                        : parameterInfo.DefaultValue;
-                                expressionArray[index] = Expression.Constant(objArray[index], parameterType);
-                                ++index;
-                            }
+                                Expression[] expressionArray = new Expression[parameters.Length];
+                                object[] objArray = new object[parameters.Length];
+                                int index = 0;
+                                foreach (ParameterInfo parameterInfo in parameters)
+                                {
+                                    Type parameterType = parameterInfo.ParameterType;
+                                    objArray[index] =
+                                        parameterInfo.DefaultValue == null ||
+                                        !(parameterInfo.DefaultValue.GetType() != typeof(DBNull))
+                                            ? GetDefaultValue(parameterType)
+                                            : parameterInfo.DefaultValue;
+                                    expressionArray[index] = Expression.Constant(objArray[index], parameterType);
+                                    ++index;
+                                }
 
-                            LambdaExpression lambdaExpression = Expression.Lambda(typeof(ThingConstructor),
-                                Expression.New(constructor, expressionArray), null);
-                            _defaultConstructors[thingType] =
-                                (ThingConstructor)lambdaExpression.Compile();
-                            _constructorParameters[thingType] = objArray;
+                                LambdaExpression lambdaExpression = Expression.Lambda(typeof(ThingConstructor),
+                                    Expression.New(constructor, expressionArray), null);
+                                _defaultConstructors[thingType] =
+                                    (ThingConstructor)lambdaExpression.Compile();
+                                _constructorParameters[thingType] = objArray;
+                            }
+                            catch (Exception ex) when (
+                                ex is FileNotFoundException ||
+                                ex is TypeLoadException ||
+                                ex is NotSupportedException)
+                            {
+                            }
                         }
                     }
 
@@ -5441,24 +5477,44 @@ namespace DuckGame
                 foreach (ConstructorInfo constructor in thingType.GetConstructors())
                 {
                     ConstructorInfo info = constructor;
-                    ParameterInfo[] parameters = info.GetParameters();
+                    ParameterInfo[] parameters;
+                    try
+                    {
+                        parameters = info.GetParameters();
+                    }
+                    catch (Exception ex) when (
+                        ex is FileNotFoundException ||
+                        ex is TypeLoadException ||
+                        ex is NotSupportedException)
+                    {
+                        continue;
+                    }
                     if (parameters.Length == 0)
                     {
                         _constructorParameterExpressions[thingType] = () => info.Invoke(null);
                     }
                     else
                     {
-                        Expression[] expressionArray = new Expression[parameters.Length];
-                        int index = 0;
-                        object[] vals = new object[parameters.Length];
-                        foreach (ParameterInfo parameterInfo in parameters)
+                        try
                         {
-                            Type parameterType = parameterInfo.ParameterType;
-                            vals[index] = GetDefaultValue(parameterType);
-                            ++index;
-                        }
+                            Expression[] expressionArray = new Expression[parameters.Length];
+                            int index = 0;
+                            object[] vals = new object[parameters.Length];
+                            foreach (ParameterInfo parameterInfo in parameters)
+                            {
+                                Type parameterType = parameterInfo.ParameterType;
+                                vals[index] = GetDefaultValue(parameterType);
+                                ++index;
+                            }
 
-                        _constructorParameterExpressions[thingType] = () => info.Invoke(vals);
+                            _constructorParameterExpressions[thingType] = () => info.Invoke(vals);
+                        }
+                        catch (Exception ex) when (
+                            ex is FileNotFoundException ||
+                            ex is TypeLoadException ||
+                            ex is NotSupportedException)
+                        {
+                        }
                     }
                 }
 

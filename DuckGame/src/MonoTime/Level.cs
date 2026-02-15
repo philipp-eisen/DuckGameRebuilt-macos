@@ -479,7 +479,9 @@ namespace DuckGame
                         }
                         if (!(_core.currentLevel is HighlightLevel))
                             Graphics.fadeAdd = 0f;
+#if !NO_STEAM
                         Steam.StoreStats();
+#endif
                     }
                     foreach (Profile profile in Profiles.active)
                         profile.duck = null;

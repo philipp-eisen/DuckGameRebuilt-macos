@@ -13,9 +13,12 @@
     <DefineConstants>TRACE;DuckGame;DUCKGAME_NET8;NO_STEAM</DefineConstants>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">osx-arm64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="src/DiscordRichPresence.cs" />
     <Compile Remove="src/WindowsPlatformStartup.cs" />
     <Compile Remove="src/MonoTime/Content/TextureConverter.cs" />
     <Compile Remove="src/MonoTime/Render/1Windows_Font.cs" />
@@ -30,12 +33,17 @@
 
   <ItemGroup>
     <None Include="../deps/steam_appid.txt" Link="steam_appid.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="build/native/osx-arm64/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
+    <None Include="build/native/osx-arm64/README.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
+    <None Include="build/native/osx-arm64/*.dylib" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.9" />
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
+    <PackageReference Include="System.CodeDom" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,6 +82,10 @@
     </Reference>
     <Reference Include="NVorbis.NAudioSupport">
       <HintPath>lib/NVorbis.NAudioSupport.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Steamworks.NET">
+      <HintPath>../deps/Steamworks.NET.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="System.Memory">

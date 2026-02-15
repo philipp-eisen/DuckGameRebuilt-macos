@@ -193,13 +193,16 @@ namespace DuckGame
                 }
                 if (_users.Count > 0 && Input.Pressed(Triggers.Menu1) && !_users[_selection].triedInvite)
                 {
+#if !NO_STEAM
                     SFX.Play("rockHitGround", 0.8f);
                     _users[_selection].triedInvite = true;
                     if (DGRSettings.MidGameJoining && Level.current is not TeamSelect2)
                     {
                         Steam.InviteUser(_users[_selection].user, Steam.lobby);
                     }
-                    else  TeamSelect2.InvitedFriend(_users[_selection].user);
+                    else
+                        TeamSelect2.InvitedFriend(_users[_selection].user);
+#endif
                 }
             }
             base.Update();

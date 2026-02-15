@@ -92,10 +92,12 @@ namespace DuckGame
         {
             foreach (string directory in DuckFile.GetDirectories(DuckFile.skinsDirectory))
                 LoadReskin(directory);
+#if !NO_STEAM
             if (Steam.user == null)
                 return;
             foreach (string directory in DuckFile.GetDirectories(DuckFile.globalSkinsDirectory))
                 LoadReskin(directory);
+#endif
         }
 
         public static void FinalizeReskins()

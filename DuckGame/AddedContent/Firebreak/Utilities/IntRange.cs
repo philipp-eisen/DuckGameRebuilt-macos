@@ -1,5 +1,4 @@
 using System;
-using System.Web.UI.WebControls.WebParts;
 
 namespace DuckGame
 {

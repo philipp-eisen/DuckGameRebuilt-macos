@@ -99,7 +99,7 @@ namespace DuckGame
                         {
                             Rgba32 px = row[x];
                             Color c = FromNonPremultiplied(px.R, px.G, px.B, px.A);
-                            data[index++] = unchecked((int)c.PackedValue);
+                            data[index++] = unchecked((int)(((uint)c.a << 24) | ((uint)c.b << 16) | ((uint)c.g << 8) | c.r));
                         }
                     }
                 });

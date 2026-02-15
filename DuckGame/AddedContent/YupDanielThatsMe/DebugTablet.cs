@@ -8,7 +8,6 @@ using Microsoft.CSharp;
 using Microsoft.Xna.Framework.Graphics;
 using SDL2;
 using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static DuckGame.CustomKeyBinds;
 
 // ReSharper disable CompareOfFloatsByEqualityOperator

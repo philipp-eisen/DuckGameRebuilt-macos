@@ -34,15 +34,25 @@ namespace DuckGame
         public static bool HasAchievement(string pAchievement)
         {
             bool flag;
-            return !_achievementStatus.TryGetValue(pAchievement, out flag) ? Steam.GetAchievement(pAchievement) : flag;
+            if (_achievementStatus.TryGetValue(pAchievement, out flag))
+                return flag;
+#if NO_STEAM
+            return false;
+#else
+            return Steam.GetAchievement(pAchievement);
+#endif
         }
 
         public static void GiveAchievement(string pAchievement)
         {
             if (HasAchievement(pAchievement))
                 return;
+#if NO_STEAM
+            _achievementStatus[pAchievement] = true;
+#else
             Steam.SetAchievement(pAchievement);
             _achievementStatus[pAchievement] = true;
+#endif
         }
 
         public static GlobalData data
@@ -54,7 +64,11 @@ namespace DuckGame
         public static void Initialize()
         {
             foreach (string achievement in _achievementList)
+#if NO_STEAM
+                _achievementStatus[achievement] = false;
+#else
                 _achievementStatus[achievement] = Steam.GetAchievement(achievement);
+#endif
             data.unlockListIndex = Rando.Int(500);
             data.flag = 0;
             Load();

@@ -214,7 +214,11 @@ namespace DuckGame
             {
                 if (NetworkDebugger.enabled)
                     return (ulong)(1330 + NetworkDebugger.currentIndex);
+#if NO_STEAM
+                return _localID;
+#else
                 return Steam.user != null ? Steam.user.id : _localID;
+#endif
             }
         }
 

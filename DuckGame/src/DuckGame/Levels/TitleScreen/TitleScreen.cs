@@ -479,7 +479,9 @@ namespace DuckGame
             //}
             //else everything below till the end of the method
             _starField = new Sprite("background/starField");
+#if !NO_STEAM
             TeamSelect2.DefaultSettings();
+#endif
             if (Network.isActive)
                 Network.EndNetworkingSession(new DuckNetErrorInfo(DuckNetError.ControlledDisconnect, "Returned to title screen."));
             if (DGRSettings.StartIn == 0 && (Music.currentSong != "Title" && Music.currentSong != "TitleDemo" || Music.finished))
@@ -528,11 +530,13 @@ namespace DuckGame
             _cloudConfigMenu.Add(new UIText(" ", Colors.DGBlue), true);
             _cloudConfigMenu.Add(new UIMenuItem("BACK", new UIMenuActionOpenMenu(_cloudConfigMenu, _optionsMenu), backButton: true), true);
             _optionsMenu.Add(new UIText(" ", Color.White), true);
+#if !NO_STEAM
             if (MonoMain.moddingEnabled)
             {
                 _modConfigMenu = new UIModManagement(_optionsMenu, "@WRENCH@MANAGE MODS@SCREWDRIVER@", Layer.HUD.camera.width, Layer.HUD.camera.height, 550f, conString: "@WASD@@SELECT@ADJUST @MENU1@TOGGLE @CANCEL@BACK");
                 _optionsMenu.Add(new UIMenuItem("MANAGE MODS", new UIMenuActionOpenMenu(_optionsMenu, _modConfigMenu), backButton: true), true);
             }
+#endif
             _optionsMenu.Add(new UIMenuItem("SELECT FLAG", new UIMenuActionOpenMenu(_optionsMenu, _flagMenu), backButton: true), true);
             _optionsMenu.Add(new UIText(" ", Color.White), true);
             if (_accessibilityMenu != null)
@@ -542,8 +546,10 @@ namespace DuckGame
             _optionsGroup.Add(_optionsMenu, false);
             _controlConfigMenu.Close();
             _flagMenu.Close();
+#if !NO_STEAM
             if (MonoMain.moddingEnabled)
                 _modConfigMenu.Close();
+#endif
             _cloudConfigMenu.Close();
             _cloudManagerMenu.Close();
             _optionsGroup.Add(_controlConfigMenu, false);
@@ -560,6 +566,7 @@ namespace DuckGame
                 _optionsGroup.Add(_ttsMenu, false);
             if (_blockMenu != null)
                 _optionsGroup.Add(_blockMenu, false);
+#if !NO_STEAM
             if (MonoMain.moddingEnabled)
             {
                 _optionsGroup.Add(_modConfigMenu, false);
@@ -567,6 +574,7 @@ namespace DuckGame
                 _optionsGroup.Add((_modConfigMenu as UIModManagement)._editModMenu, false);
                 _optionsGroup.Add((_modConfigMenu as UIModManagement)._yesNoMenu, false);
             }
+#endif
             _optionsGroup.Add(_cloudManagerMenu, false);
             _optionsGroup.Add(_cloudManagerMenu._deleteMenu, false);
             _optionsGroup.Add(_cloudConfigMenu, false);
@@ -1166,7 +1174,12 @@ namespace DuckGame
                             //if (Teams.all[i].activeProfiles.Find(p => p.inputProfile == profileWithDevice) != null) continue;
                             Teams.all[i].ClearProfiles();
                         }
+#if !NO_STEAM
                         current = new TeamSelect2();
+#else
+                        _enterMultiplayer = false;
+                        _fastMultiplayer = false;
+#endif
                     }
                     _fastMultiplayer = true;
                     _enterMultiplayer = true;
@@ -1408,7 +1421,11 @@ namespace DuckGame
                             foreach (Team team in Teams.all)
                                 team.ClearProfiles();
                         }
+#if !NO_STEAM
                         current = new TeamSelect2();
+#else
+                        current = new TitleScreen();
+#endif
                     }
                     else if (_enterEditor)
                         current = Main.editor;

@@ -109,7 +109,9 @@ namespace DuckGame
             DestroyType.InitializeTypes();
             VirtualTransition.Initialize();
             Unlockables.Initialize();
+#if !NO_STEAM
             UIInviteMenu.Initialize();
+#endif
 
             LevelGenerator.Initialize();
             DuckFile.InitializeMojis();
@@ -207,7 +209,9 @@ namespace DuckGame
             }
             //Main.isDemo = false;
             RockWeather.TickWeather();
+#if !NO_STEAM
             RandomLevelDownloader.Update();
+#endif
             if (!NetworkDebugger.enabled)
                 FireManager.Update();
             DamageManager.Update();

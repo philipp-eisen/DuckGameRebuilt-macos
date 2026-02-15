@@ -11,11 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="src/**/*.cs" />
-    <Compile Include="Properties/AssemblyInfo.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Steamworks.NET">
       <HintPath>../deps/Steamworks.NET.dll</HintPath>
       <Private>true</Private>

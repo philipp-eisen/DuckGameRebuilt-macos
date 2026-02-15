@@ -11,9 +11,7 @@
 - Existing non-Windows flow in repo is Mono/msbuild-based and copies `deps/*` ad hoc after build; this is not a RID-aware publish flow.
 - Steam is intentionally excluded in phase 1 per requirement.
 - Environment tooling constraint discovered during execution:
-  - `dotnet` is not installed (`dotnet: command not found`)
-  - `msbuild` is not installed
-  - `mono` is installed
+  - previously `dotnet`/`msbuild` were unavailable; this is now resolved for `dotnet` via Homebrew SDK 8.x
 - A parallel net8 project lane is now in-repo:
   - `DuckGame/DuckGame.Net8.csproj`
   - `Steam/Steam.Net8.csproj`
@@ -30,3 +28,20 @@
   - `scripts/publish-macos-arm64.sh`
   - `DuckGame/build/native/osx-arm64/README.md`
   - `docs/migration/net8-macos-phase1.md`
+- SDK bootstrap gate is now green:
+  - `which dotnet` -> `/opt/homebrew/opt/dotnet@8/bin/dotnet`
+  - `dotnet --version` -> `8.0.124`
+  - `dotnet --info` reports `RID: osx-arm64`, host architecture `arm64`
+- Net8 lane compile verification now passes in both Debug and Release (`dotnet build ... -clp:ErrorsOnly`), with warnings but no errors.
+- Publish verification now passes via `scripts/publish-macos-arm64.sh`; required native dylibs are in publish output.
+- Native linkage fix is effective: `otool -L` for `libFNA3D.0.dylib` now references SDL as `@rpath/libSDL2-2.0.0.dylib` rather than Homebrew absolute path.
+- Runtime smoke check result is stable for short launch: published binary remains alive for 8 seconds and emits no stderr/stdout to `run.log`.
+- Steam-off packaging adjustment: publish script no longer force-copies `Steamworks.NET.dll`/config from `deps`.
+- Attempting to fully remove Steam managed assemblies from publish output caused a startup stack overflow in `Program.Resolve` -> `AssemblyLoadContext.InvokeResolveEvent` recursion during marker/type scanning. Restoring Steam managed assemblies in output returns to stable startup (`ALIVE_AFTER_8S`).
+- Current phase-1 posture is therefore: Steam runtime paths are disabled by `NO_STEAM`, but Steam managed assemblies remain present to satisfy reflection-time assembly resolution.
+- Dependency hygiene note: restore reports a moderate advisory on `SixLabors.ImageSharp` 3.1.9 (`GHSA-rxmq-m78w-7wmc`), which should be reviewed before final handoff.
+- Additional no-Steam runtime guards were required in live title-screen flow (`MonoMain`, `Level`, `Unlockables`, `TeamSelect2`, `TitleScreen`, `Main`) to avoid Steam type loads during startup/update.
+- With those guards, current publish smoke result is stable for 60 seconds at title-screen runtime without a fatal Steamworks assembly exception.
+- `ducklog.txt` still logs repeated `GlobalData` parse warnings; these are non-fatal but should be triaged for save-data compatibility.
+- Music load can still report missing `NVorbis` in logs during startup, indicating a likely packaging/reference gap that may impact audio even when runtime no longer crashes.
+- `TeamSelect2` remained a recurring no-Steam crash source (type-load paths via title/duck update). Current no-Steam stabilization prevents title-screen transitions into `TeamSelect2` to keep runtime alive; multiplayer/team-select functionality is therefore intentionally limited in this lane for now.

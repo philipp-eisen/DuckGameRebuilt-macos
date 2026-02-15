@@ -1,5 +1,6 @@
 #if DUCKGAME_NET8
 using System;
+using System.IO;
 using XnaToFna.ProxyForms;
 
 namespace System.Windows.Forms
@@ -57,8 +58,41 @@ namespace System.Windows.Forms
 
     public class Form : XnaToFna.ProxyForms.Form
     {
+        public virtual DialogResult ShowDialog()
+        {
+            return DialogResult.Cancel;
+        }
+
         protected virtual void WndProc(ref Message m)
         {
+        }
+    }
+
+    public class OpenFileDialog
+    {
+        public string Filter { get; set; } = string.Empty;
+
+        public string FileName { get; set; } = string.Empty;
+
+        public DialogResult ShowDialog()
+        {
+            return DialogResult.Cancel;
+        }
+    }
+
+    public class SaveFileDialog
+    {
+        public bool AddExtension { get; set; }
+
+        public string DefaultExt { get; set; } = string.Empty;
+
+        public string Filter { get; set; } = string.Empty;
+
+        public string FileName { get; set; } = string.Empty;
+
+        public DialogResult ShowDialog()
+        {
+            return DialogResult.Cancel;
         }
     }
 
@@ -71,6 +105,11 @@ namespace System.Windows.Forms
         public void AppendText(string value)
         {
             Text += value;
+        }
+
+        public void SaveFile(string path)
+        {
+            File.WriteAllText(path, Text);
         }
     }
 }

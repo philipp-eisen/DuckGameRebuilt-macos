@@ -49,8 +49,10 @@ namespace DuckGame
                 if (!DuckFile.FileExists(pDir + "/mappack_info.txt"))
                 {
                     string str = "Dan Rando";
+#if !NO_STEAM
                     if (Steam.user != null)
                         str = Steam.user.name;
+#endif
                     DuckFile.SaveString(pPack.name + "\n" + str + "\nEdit info.txt to change this information!\n<add a 1280x720 PNG file called 'screenshot.png' to set a custom workshop image!>", pDir + "/mappack_info.txt");
                 }
             }
@@ -97,10 +99,12 @@ namespace DuckGame
         {
             foreach (string directory in DuckFile.GetDirectories(DuckFile.mappackDirectory))
                 LoadMapPack(directory);
+#if !NO_STEAM
             if (Steam.user == null)
                 return;
             foreach (string directory in DuckFile.GetDirectories(DuckFile.globalMappackDirectory))
                 LoadMapPack(directory);
+#endif
         }
 
         public static void RegeneratePreviewsIfNecessary()

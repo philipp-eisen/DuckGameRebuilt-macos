@@ -160,7 +160,11 @@ namespace DuckGame
         private bool _threadedLoadingStarted;
         private static Thread _initializeThread;
         private static Task _initializeTask;
+#if NO_STEAM
+        private static List<object> availableModsToDownload = new List<object>();
+#else
         private static List<WorkshopItem> availableModsToDownload = new List<WorkshopItem>();
+#endif
         public static bool editSave = false;
         public static bool downloadWorkshopMods = false;
         public static bool disableDirectInput = false;
@@ -615,7 +619,11 @@ namespace DuckGame
 
         public static string GetInfiniteLoopDetails()
         {
+#if DUCKGAME_NET8
+            string str = Environment.StackTrace;
+#else
             string str = new StackTrace(mainThread, true).ToString();
+#endif
             int length = str.IndexOf("at Microsoft.Xna.Framework.Game.Tick");
             return length >= 0 ? str.Substring(0, length) : str;
         }
@@ -822,6 +830,7 @@ namespace DuckGame
 
         public static Task initializeTask => _initializeTask;
 
+#if !NO_STEAM
         private static void ResultFetched(object value0, WorkshopQueryResult result)
         {
             if (result == null || result.details == null)
@@ -992,6 +1001,19 @@ namespace DuckGame
                 MonoMain._thingsToLoad.Enqueue(steamLoad);
             }
         }
+#else
+        private static void ResultFetched(object value0, object result)
+        {
+        }
+
+        private void DownloadTemporaryMods()
+        {
+        }
+
+        private void DownloadWorkshopItems()
+        {
+        }
+#endif
         private void AddNamedLoadingAction(Action pAction) => _thingsToLoad.Enqueue((LoadingAction)pAction);
         private void AddLoadingAction(Action pAction, string label = "")
         {
@@ -1425,7 +1447,11 @@ namespace DuckGame
                 Options.FullscreenChanged();
             }
             if (!Cloud.processing)
+            {
+#if !NO_STEAM
                 Steam.Update();
+#endif
+            }
             try
             {
                 if (Keyboard.Pressed(Keys.F2))

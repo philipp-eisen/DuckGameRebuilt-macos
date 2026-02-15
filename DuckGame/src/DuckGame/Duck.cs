@@ -3910,6 +3910,7 @@ namespace DuckGame
             if (quack <= 0)
                 quackStart = false;
             ++wait;
+#if !NO_STEAM
             if (TeamSelect2.doCalc && wait > 10 && profile != null)
             {
                 wait = 0;
@@ -3932,6 +3933,7 @@ namespace DuckGame
                 }
                 lastCalc = profileScore;
             }
+#endif
             grappleMultiplier = !grappleMul ? 1f : 1.5f;
             ++_timeSinceThrow;
             if (_timeSinceThrow > 30)

@@ -154,7 +154,17 @@ namespace DuckGame
 
         public static string hatpackDirectory => modsDirectory + _hatpackDirectory;
 
-        public static string userDirectory => Steam.user != null ? saveDirectory + Steam.user.id.ToString() + "/" : saveDirectory;
+        public static string userDirectory
+        {
+            get
+            {
+#if NO_STEAM
+                return saveDirectory;
+#else
+                return Steam.user != null ? saveDirectory + Steam.user.id.ToString() + "/" : saveDirectory;
+#endif
+            }
+        }
 
         public static string customBlockDirectory => saveDirectory + _customBlockDirectory;
 
@@ -686,7 +696,11 @@ namespace DuckGame
         {
             try
             {
+#if NO_STEAM
+                return false;
+#else
                 return Steam.user != null && Path.GetDirectoryName(path).Contains(Steam.user.id.ToString());
+#endif
             }
             catch (Exception)
             {
