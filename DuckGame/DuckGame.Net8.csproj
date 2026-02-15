@@ -33,7 +33,6 @@
 
   <ItemGroup>
     <None Include="../deps/steam_appid.txt" Link="steam_appid.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="build/native/osx-arm64/README.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
     <None Include="build/native/osx-arm64/*.dylib" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
   </ItemGroup>
 
@@ -89,6 +88,6 @@
 
   <Target Name="GenerateVersionInfo" BeforeTargets="BeforeBuild">
     <Exec Command="git describe --always --dirty --abbrev=40 &gt; &quot;$(ProjectDir)version.txt&quot;" />
-    <Exec Command="printf &quot;%s&quot; &quot;$(SolutionDir)&quot; &gt; &quot;$(ProjectDir)SlnPath.txt&quot;" />
+    <WriteLinesToFile File="$(ProjectDir)SlnPath.txt" Lines="$(SolutionDir)" Overwrite="true" />
   </Target>
 </Project>
