@@ -485,10 +485,7 @@ namespace DuckGame
 
         public void DoInitialize()
         {
-            if (MonoMain.disableSteam)
-                _core = new NCBasic(activeNetwork, _networkIndex);
-            else
-                _core = new NCSteam(activeNetwork, _networkIndex);
+            _core = new NCSteam(activeNetwork, _networkIndex);
             if (NetworkDebugger.enabled)
                 _lanCore = new NCNetDebug(activeNetwork, _networkIndex);
             else

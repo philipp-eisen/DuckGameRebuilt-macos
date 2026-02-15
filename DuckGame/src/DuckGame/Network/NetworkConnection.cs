@@ -93,7 +93,7 @@ namespace DuckGame
             {
                 if (data is User userData)
                     str2 = userData.id.ToString();
-                else if (!MonoMain.disableSteam && Steam.user != null)
+                else if (Steam.user != null)
                     str2 = Steam.user.id.ToString();
                 else
                     str2 = "LAN USER";
@@ -295,7 +295,7 @@ namespace DuckGame
             if (NetworkDebugger.enabled)
                 debuggerContext.Reset();
             string userID = "local";
-            if (!MonoMain.disableSteam && Steam.user != null)
+            if (Steam.user != null)
                 userID = Steam.user.id.ToString();
             DevConsole.Log(DCSection.Connection, "@disconnect Reset called on " + identifier + "(" + userID + ", " + reason + ")");
         }

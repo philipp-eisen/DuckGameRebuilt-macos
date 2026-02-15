@@ -148,7 +148,6 @@ namespace DuckGame
         /// <summary>deprecated</summary>
         public static bool directAudio = false;
         public static bool networkDebugger = false;
-        public static bool disableSteam = false;
         public static bool noIntro = false;
         public static bool startInEditor = false;
         public static bool preloadModContent = true;
@@ -1325,25 +1324,22 @@ namespace DuckGame
             {
                 //Input.Update();
                 //DevConsole.Update();
-                if (!disableSteam)
+                if (Cloud.processing)
                 {
-                    if (Cloud.processing)
+                    Cloud.Update();//return; unneded probly
+                }
+                if (steamConnectionCheckFail)
+                {
+                    if (_loggedConnectionCheckFailure)
                     {
-                        Cloud.Update();//return; unneded probly
+                        _loggedConnectionCheckFailure = true;
+                        DevConsole.Log("|DGRED|Failed to initialize a connection to Steam.");
                     }
-                    if (steamConnectionCheckFail)
-                    {
-                        if (_loggedConnectionCheckFailure)
-                        {
-                            _loggedConnectionCheckFailure = true;
-                            DevConsole.Log("|DGRED|Failed to initialize a connection to Steam.");
-                        }
-                    }
-                    else if (Steam.IsInitialized() && Steam.IsRunningInitializeProcedures())
-                    {
-                        NloadMessage = "Loading Steam";
-                        Steam.Update();//  why return lets just roll through itll be fine =);
-                    }
+                }
+                else if (Steam.IsInitialized() && Steam.IsRunningInitializeProcedures())
+                {
+                    NloadMessage = "Loading Steam";
+                    Steam.Update();//  why return lets just roll through itll be fine =);
                 }
             }
             if (_canStartLoading && !_threadedLoadingStarted && _didFirstDraw)
