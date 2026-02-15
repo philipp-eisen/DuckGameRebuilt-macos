@@ -55,11 +55,6 @@ Prerequisites:
     * `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc`
     * `source ~/.zshrc`
   * Verify installation: `dotnet --version` (should start with `8.`)
-* Native runtime libraries present in `DuckGame/build/native/osx-arm64/`:
-  * `libSDL2-2.0.0.dylib`
-  * `libFNA3D.0.dylib`
-  * `libFAudio.0.dylib`
-  * `libtheorafile.dylib`
 * Managed compatibility dependencies present in `deps/`:
   * `System.Memory.4.5.5/lib/net461/System.Memory.dll`
   * `System.Runtime.CompilerServices.Unsafe.6.0.0/lib/net461/System.Runtime.CompilerServices.Unsafe.dll`
@@ -87,6 +82,7 @@ cd DuckGame/bin/Release/net8.0/osx-arm64/publish
 Notes:
 
 * Publish output path: `DuckGame/bin/Release/net8.0/osx-arm64/publish/`
+* Native runtime `.dylib` files are already committed in `DuckGame/build/native/osx-arm64/` and copied by `scripts/publish-macos-arm64.sh`.
 * Steam initialization on macOS depends on AppID platform support in Steam. If the AppID is not mac-enabled, the build can still publish/run but Steam login/features may fail at runtime.
 
 Packaging helpers:
