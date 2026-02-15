@@ -383,3 +383,6 @@ FNA/lib/FNA3D/build/
 FNA/lib/Theorafile/libtheorafile.dylib
 deps/System.Memory.4.5.5/
 deps/System.Runtime.CompilerServices.Unsafe.6.0.0/
+
+# Agent notes
+.agents/
