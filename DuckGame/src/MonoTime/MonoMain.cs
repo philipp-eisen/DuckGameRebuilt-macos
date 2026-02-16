@@ -589,6 +589,12 @@ namespace DuckGame
                     ResetInfiniteLoopTimer();
                 if (_loopTimer.Elapsed.TotalSeconds > 5d)
                 {
+#if DUCKGAME_NET8
+                    infiniteLoopDetails = "Infinite loop crash: " + GetInfiniteLoopDetails();
+                    hadInfiniteLoop = true;
+                    System.Diagnostics.Debug.WriteLine(infiniteLoopDetails);
+                    Environment.FailFast(infiniteLoopDetails);
+#else
                     try
                     {
                         mainThread.Suspend();
@@ -608,6 +614,7 @@ namespace DuckGame
                     {
                         throw ex;
                     }
+#endif
                 }
             }
         }
@@ -615,12 +622,14 @@ namespace DuckGame
         public static string GetInfiniteLoopDetails()
         {
 #if DUCKGAME_NET8
-            string str = Environment.StackTrace;
+            // StackTrace on .NET 8 here would be the detector thread, not the hung main thread.
+            int threadId = mainThread != null ? mainThread.ManagedThreadId : -1;
+            return "[net8] main-thread stack capture is unsupported; no main-thread stack trace available (mainThreadId=" + threadId + ")";
 #else
             string str = new StackTrace(mainThread, true).ToString();
-#endif
             int length = str.IndexOf("at Microsoft.Xna.Framework.Game.Tick");
             return length >= 0 ? str.Substring(0, length) : str;
+#endif
         }
 
         protected override void LoadContent() => base.LoadContent();
