@@ -2,7 +2,11 @@
 
 This repository is a fork of Duck Game Rebuilt focused on macOS support.
 
-It adds a native `.NET 8` macOS build pipeline (Apple Silicon), packaging helpers, and GitHub Actions release automation for signed/notarized `.dmg` output.
+## How to play
+
+- Download the latest build from the [Releases page](https://github.com/philipp-eisen/DuckGameRebuilt-macos/releases/latest)
+- Ensure you have steam running
+- You must be logged into Steam with an account that owns [Duck Game](https://store.steampowered.com/app/312530/Duck_Game/)
 
 ## Upstream project
 
@@ -11,12 +15,6 @@ It adds a native `.NET 8` macOS build pipeline (Apple Silicon), packaging helper
 - Discord: [Duck Game Rebuilt Discord](https://discord.gg/XkAjt744hz)
 
 For core gameplay/project docs, use the upstream repository and wiki.
-
-## Usage
-
-- Steam must be running.
-- You must be logged into Steam with an account that owns Duck Game:
-  - `https://store.steampowered.com/app/312530/Duck_Game/`
 
 ## Disclaimer
 
