@@ -1,0 +1,93 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>DuckGame</AssemblyName>
+    <RootNamespace>DuckGame</RootNamespace>
+    <StartupObject>DuckGame.Program</StartupObject>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DefineConstants>TRACE;DuckGame;DUCKGAME_NET8</DefineConstants>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">osx-arm64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0050</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="src/DiscordRichPresence.cs" />
+    <Compile Remove="src/WindowsPlatformStartup.cs" />
+    <Compile Remove="src/MonoTime/Content/TextureConverter.cs" />
+    <Compile Remove="src/MonoTime/Render/1Windows_Font.cs" />
+    <Compile Remove="src/MonoTime/Render/Windows_Font.cs" />
+    <Compile Remove="src/MonoTime/Sound/Speech.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="version.txt" />
+    <EmbeddedResource Include="SlnPath.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../deps/steam_appid.txt" Link="steam_appid.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="build/native/osx-arm64/*.dylib" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="Steamworks.NET" Version="20.1.0" />
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="System.Security.Permissions" Version="8.0.0" />
+    <PackageReference Include="System.CodeDom" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Steam/Steam.Net8.csproj" />
+    <ProjectReference Include="../FNA/FNA.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="DGInput">
+      <HintPath>lib/DGInput.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="DiscordRPC">
+      <HintPath>lib/DiscordRPC.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>lib/Mono.Cecil.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="MonoMod">
+      <HintPath>lib/MonoMod.exe</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="NAudio">
+      <HintPath>lib/NAudio.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>lib/Newtonsoft.Json.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="NVorbis">
+      <HintPath>lib/NVorbis.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="NVorbis.NAudioSupport">
+      <HintPath>lib/NVorbis.NAudioSupport.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="GenerateVersionInfo" BeforeTargets="BeforeBuild">
+    <Exec Command="git describe --always --dirty --abbrev=40 &gt; &quot;$(ProjectDir)version.txt&quot;" />
+    <WriteLinesToFile File="$(ProjectDir)SlnPath.txt" Lines="$(SolutionDir)" Overwrite="true" />
+  </Target>
+</Project>

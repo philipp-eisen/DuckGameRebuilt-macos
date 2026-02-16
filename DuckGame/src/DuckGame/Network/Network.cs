@@ -518,16 +518,27 @@ namespace DuckGame
             _currentTick += 1U;
             _synchronizedTime++;
             _tickSync += 1;
-            core.Update();
-            DuckNetwork.Update();
+            if (_networkActive)
+            {
+                core.Update();
+                DuckNetwork.Update();
+            }
         }
 
         public static void PostUpdate() => activeNetwork.DoPostUpdate();
 
-        public void DoPostUpdate() => core.PostUpdate();
+        public void DoPostUpdate()
+        {
+            if (_networkActive)
+                core.PostUpdate();
+        }
 
         public static void PostDraw() => activeNetwork.DoPostDraw();
 
-        public void DoPostDraw() => core.PostDraw();
+        public void DoPostDraw()
+        {
+            if (_networkActive)
+                core.PostDraw();
+        }
     }
 }

@@ -1561,7 +1561,9 @@ namespace DuckGame
                 }
                 _attemptingToInvite = true;
             }
-            if (_attemptingToInvite && Network.isActive && (!_didHost || Steam.lobby != null && !Steam.lobby.processing))
+            if (_attemptingToInvite && Network.isActive
+                && (!_didHost || Steam.lobby != null && !Steam.lobby.processing)
+                )
             {
                 foreach (User invitedUser in _invitedUsers)
                     Steam.InviteUser(invitedUser, Steam.lobby);

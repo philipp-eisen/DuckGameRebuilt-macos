@@ -148,7 +148,6 @@ namespace DuckGame
         /// <summary>deprecated</summary>
         public static bool directAudio = false;
         public static bool networkDebugger = false;
-        public static bool disableSteam = false;
         public static bool noIntro = false;
         public static bool startInEditor = false;
         public static bool preloadModContent = true;
@@ -590,6 +589,12 @@ namespace DuckGame
                     ResetInfiniteLoopTimer();
                 if (_loopTimer.Elapsed.TotalSeconds > 5d)
                 {
+#if DUCKGAME_NET8
+                    infiniteLoopDetails = "Infinite loop crash: " + GetInfiniteLoopDetails();
+                    hadInfiniteLoop = true;
+                    System.Diagnostics.Debug.WriteLine(infiniteLoopDetails);
+                    Environment.FailFast(infiniteLoopDetails);
+#else
                     try
                     {
                         mainThread.Suspend();
@@ -609,15 +614,22 @@ namespace DuckGame
                     {
                         throw ex;
                     }
+#endif
                 }
             }
         }
 
         public static string GetInfiniteLoopDetails()
         {
+#if DUCKGAME_NET8
+            // StackTrace on .NET 8 here would be the detector thread, not the hung main thread.
+            int threadId = mainThread != null ? mainThread.ManagedThreadId : -1;
+            return "[net8] main-thread stack capture is unsupported; no main-thread stack trace available (mainThreadId=" + threadId + ")";
+#else
             string str = new StackTrace(mainThread, true).ToString();
             int length = str.IndexOf("at Microsoft.Xna.Framework.Game.Tick");
             return length >= 0 ? str.Substring(0, length) : str;
+#endif
         }
 
         protected override void LoadContent() => base.LoadContent();
@@ -1321,25 +1333,22 @@ namespace DuckGame
             {
                 //Input.Update();
                 //DevConsole.Update();
-                if (!disableSteam)
+                if (Cloud.processing)
                 {
-                    if (Cloud.processing)
+                    Cloud.Update();//return; unneded probly
+                }
+                if (steamConnectionCheckFail)
+                {
+                    if (_loggedConnectionCheckFailure)
                     {
-                        Cloud.Update();//return; unneded probly
+                        _loggedConnectionCheckFailure = true;
+                        DevConsole.Log("|DGRED|Failed to initialize a connection to Steam.");
                     }
-                    if (steamConnectionCheckFail)
-                    {
-                        if (_loggedConnectionCheckFailure)
-                        {
-                            _loggedConnectionCheckFailure = true;
-                            DevConsole.Log("|DGRED|Failed to initialize a connection to Steam.");
-                        }
-                    }
-                    else if (Steam.IsInitialized() && Steam.IsRunningInitializeProcedures())
-                    {
-                        NloadMessage = "Loading Steam";
-                        Steam.Update();//  why return lets just roll through itll be fine =);
-                    }
+                }
+                else if (Steam.IsInitialized() && Steam.IsRunningInitializeProcedures())
+                {
+                    NloadMessage = "Loading Steam";
+                    Steam.Update();//  why return lets just roll through itll be fine =);
                 }
             }
             if (_canStartLoading && !_threadedLoadingStarted && _didFirstDraw)
@@ -1425,7 +1434,9 @@ namespace DuckGame
                 Options.FullscreenChanged();
             }
             if (!Cloud.processing)
+            {
                 Steam.Update();
+            }
             try
             {
                 if (Keyboard.Pressed(Keys.F2))

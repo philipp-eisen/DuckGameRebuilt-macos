@@ -34,7 +34,9 @@ namespace DuckGame
         public static bool HasAchievement(string pAchievement)
         {
             bool flag;
-            return !_achievementStatus.TryGetValue(pAchievement, out flag) ? Steam.GetAchievement(pAchievement) : flag;
+            if (_achievementStatus.TryGetValue(pAchievement, out flag))
+                return flag;
+            return Steam.GetAchievement(pAchievement);
         }
 
         public static void GiveAchievement(string pAchievement)

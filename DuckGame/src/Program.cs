@@ -22,6 +22,9 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
+#if DUCKGAME_NET8
+using System.Runtime.Loader;
+#endif
 
 namespace DuckGame
 {
@@ -37,6 +40,7 @@ namespace DuckGame
 
         // this should be formatted like X.X.X where each X is a number
         public const string CURRENT_VERSION_ID = "1.4.7";
+        public const string DUCK_GAME_STORE_URL = "https://store.steampowered.com/app/312530/Duck_Game/";
 
         // do change this you know what you're doing -Lucky
         public const string CURRENT_VERSION_ID_FORMATTED = "v" + CURRENT_VERSION_ID;
@@ -141,6 +145,14 @@ namespace DuckGame
             DevConsole.Log("|PINK|DGR |WHITE|Version " + gitVersion);
             int p = (int)Environment.OSVersion.Platform;
             IsLinuxD = (p == 4) || (p == 6) || (p == 128);
+#if DUCKGAME_NET8
+            TryPreloadManagedDependency("Steamworks.NET.dll");
+            TryPreloadManagedDependency("DGSteam.dll");
+#endif
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
+#if DUCKGAME_NET8
+            AssemblyLoadContext.Default.Resolving += ResolveNet8ManagedDependency;
+#endif
             if (IsLinuxD)
             {
                 MonoMain.enableThreadedLoading = false;
@@ -160,9 +172,8 @@ namespace DuckGame
             }
             else
                 AppDomain.CurrentDomain.AssemblyLoad += new AssemblyLoadEventHandler(WindowsPlatformStartup.AssemblyLoad);
-            Application.ThreadException += new ThreadExceptionEventHandler(UnhandledThreadExceptionTrapper);
+            Application.ThreadException += new System.Windows.Forms.ThreadExceptionEventHandler(UnhandledThreadExceptionTrapper);
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(WindowsPlatformStartup.UnhandledExceptionTrapper);
-            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
             TaskScheduler.UnobservedTaskException += UnhandledExceptionUnobserved;
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
@@ -200,6 +211,7 @@ namespace DuckGame
             {
                 return false;
             }
+#if !DUCKGAME_NET8
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
                 while (tries > 0)
@@ -233,6 +245,7 @@ namespace DuckGame
             catch
             {
             }
+#endif
             DevConsole.Log("|PINK|DGR |WHITE|Is Linux " + IsLinuxD.ToString() + " PlatformID " + p.ToString());
             gameAssembly = Assembly.GetExecutingAssembly();
             gameAssemblyName = gameAssembly.GetName().Name;
@@ -245,12 +258,51 @@ namespace DuckGame
 
         public static Assembly Resolve(object sender, ResolveEventArgs args)
         {
+            if (args.Name.StartsWith("Steamworks.NET,", StringComparison.Ordinal))
+            {
+#if DUCKGAME_NET8
+                Assembly steamworksAssembly = TryLoadManagedDependency("Steamworks.NET.dll");
+                if (steamworksAssembly != null)
+                    return steamworksAssembly;
+#else
+                string steamworksAssemblyPath = Path.Combine(AppContext.BaseDirectory, "Steamworks.NET.dll");
+                if (File.Exists(steamworksAssemblyPath))
+                {
+                    try
+                    {
+                        return Assembly.LoadFrom(steamworksAssemblyPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+#endif
+            }
+            if (args.Name.StartsWith("DGSteam,", StringComparison.Ordinal) || args.Name.StartsWith("Steam,", StringComparison.Ordinal))
+            {
+                Assembly steamAssembly = Assembly.GetAssembly(typeof(Steam));
+                if (steamAssembly != null)
+                    return steamAssembly;
+#if DUCKGAME_NET8
+                steamAssembly = TryLoadManagedDependency("DGSteam.dll");
+                if (steamAssembly != null)
+                    return steamAssembly;
+#else
+                string steamAssemblyPath = Path.Combine(AppContext.BaseDirectory, "DGSteam.dll");
+                if (File.Exists(steamAssemblyPath))
+                {
+                    try
+                    {
+                        return Assembly.LoadFrom(steamAssemblyPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+#endif
+            }
             if (!enteredMain)
                 return null;
-            if (args.Name.StartsWith("Steam,"))
-            {
-                return Assembly.GetAssembly(typeof(Steam));
-            }
             if (!_attemptingResolve)
             {
                 bool flag = false;
@@ -277,7 +329,7 @@ namespace DuckGame
                     StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
                     streamWriter.WriteLine(str);
                     streamWriter.Close();
-                    Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
+                    TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
                 }
             }
             return null;
@@ -490,9 +542,6 @@ namespace DuckGame
                     case "-nofullscreen":
                         MonoMain.noFullscreen = true;
                         break;
-                    case "-nosteam":
-                        MonoMain.disableSteam = true;
-                        break;
                     case "-steam":
                         MonoMain.launchedFromSteam = true;
                         break;
@@ -697,31 +746,9 @@ namespace DuckGame
                 }
             }
             enteredMain = true;
-            if (!MonoMain.disableSteam)
-            {
-                if (MonoMain.breakSteam || !Steam.InitializeCore())
-                    LogLine("Steam INIT Failed!");
-                else
-                    Steam.Initialize();
-            }
-            try
-            {
-                if (Steam.IsInitialized())
-                {
-                    steamBuildID = Steam.GetGameBuildID();
-                    Steam.RemotePlay += new Steam.RemotePlayDelegate(RemotePlayConnected);
-                    if (Steam.IsLoggedIn())
-                    {
-                        if (Steam.Authorize())
-                            goto label_109;
-                    }
-                    MonoMain.steamConnectionCheckFail = true;
-                }
-                else
-                    steamBuildID = -1;
-            }
-            catch (Exception) { }
-        label_109:
+            if (!EnsureSteamReady())
+                return;
+
             DeviceChangeNotifier.Start();
             DevConsole.Log("Starting Duck Game (" + DG.platform + ")...");
             if (DGRSettings.ControllerCount > 4)
@@ -763,6 +790,152 @@ namespace DuckGame
         {
             accumulatedElapsedTimefieldinfo.SetValue(g, t);
         }
+
+        private static bool EnsureSteamReady()
+        {
+            steamBuildID = -1;
+            try
+            {
+                if (MonoMain.breakSteam || !Steam.InitializeCore())
+                {
+                    string details = string.IsNullOrWhiteSpace(steamInitializeError)
+                        ? string.Empty
+                        : "\n\nDetails: " + steamInitializeError.Trim();
+                    return FailSteamStartup(
+                        "Steam failed to initialize.",
+                        "Make sure Steam is running, you are logged in, and the account owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL + details);
+                }
+
+                Steam.Initialize();
+            }
+            catch (Exception ex)
+            {
+                return FailSteamStartup(
+                    "Steam failed to initialize.",
+                    "Make sure Steam is running, you are logged in, and the account owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL + "\n\nDetails: " + ex.Message);
+            }
+
+            try
+            {
+                steamBuildID = Steam.GetGameBuildID();
+            }
+            catch
+            {
+                steamBuildID = -1;
+            }
+
+            try
+            {
+                Steam.RemotePlay += new Steam.RemotePlayDelegate(RemotePlayConnected);
+            }
+            catch
+            {
+            }
+
+            bool loggedIn = false;
+            bool authorized = false;
+            try
+            {
+                loggedIn = Steam.IsLoggedIn();
+                if (loggedIn)
+                    authorized = Steam.Authorize();
+            }
+            catch
+            {
+            }
+
+            if (!loggedIn)
+            {
+                MonoMain.steamConnectionCheckFail = true;
+                return FailSteamStartup(
+                    "Steam is not logged in.",
+                    "Sign in to Steam with an account that owns Duck Game, then relaunch.\n\nStore: " + DUCK_GAME_STORE_URL);
+            }
+
+            if (!authorized)
+            {
+                MonoMain.steamConnectionCheckFail = true;
+                string guidance = "No valid Duck Game license was found for the current Steam account."
+                    + "\n\nSign in with an account that owns Duck Game.\n\nStore: " + DUCK_GAME_STORE_URL;
+                if (IsMacOSRuntime())
+                    guidance += "\n\nIf Steam reports 'Invalid Platform' for this AppID, Steam authorization cannot succeed on macOS.";
+                return FailSteamStartup("Steam authorization failed.", guidance);
+            }
+
+            MonoMain.steamConnectionCheckFail = false;
+            return true;
+        }
+
+        private static bool FailSteamStartup(string reason, string guidance)
+        {
+            string title = "Duck Game Rebuilt - Steam Required";
+            string message = reason + "\n\n" + guidance;
+            LogLine(title);
+            LogLine(message);
+            TryShowSteamStartupDialog(title, message);
+            Environment.ExitCode = 1;
+            return false;
+        }
+
+        private static void TryShowSteamStartupDialog(string title, string message)
+        {
+            try
+            {
+                Console.Error.WriteLine(title);
+                Console.Error.WriteLine(message);
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (IsMacOSRuntime())
+                {
+                    string scriptPath = Path.Combine(Path.GetTempPath(), "duckgame-steam-startup-error.applescript");
+                    string script = "display alert \"" + EscapeAppleScriptString(title) + "\" message \"" + EscapeAppleScriptString(message) + "\" as critical";
+                    File.WriteAllText(scriptPath, script);
+                    ProcessStartInfo startInfo = new ProcessStartInfo("osascript", "\"" + scriptPath + "\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    Process.Start(startInfo);
+                    return;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                MessageBox.Show(title + "\n\n" + message);
+            }
+            catch
+            {
+            }
+        }
+
+        private static bool IsMacOSRuntime()
+        {
+#if DUCKGAME_NET8
+            return OperatingSystem.IsMacOS();
+#else
+            PlatformID platform = Environment.OSVersion.Platform;
+            return platform == PlatformID.MacOSX || (platform == PlatformID.Unix && Directory.Exists("/Applications") && Directory.Exists("/System/Library"));
+#endif
+        }
+
+        private static string EscapeAppleScriptString(string value)
+        {
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r", string.Empty)
+                .Replace("\n", "\\n");
+        }
+
         public static string GetDefaultWindowTitle()
         {
             string windowTitle = string.Empty;
@@ -786,6 +959,61 @@ namespace DuckGame
         }
         private static void OnOutputDebugStringHandler(int pid, string text) => steamInitializeError = steamInitializeError + text + "\n";
 
+        private static void TryStartCrashWindow(string args)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return;
+            if (!File.Exists("CrashWindow.exe"))
+                return;
+            Process.Start("CrashWindow.exe", args);
+        }
+
+#if DUCKGAME_NET8
+        private static Assembly TryLoadManagedDependency(string fileName)
+        {
+            string assemblySimpleName = Path.GetFileNameWithoutExtension(fileName);
+            foreach (Assembly loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (string.Equals(loadedAssembly.GetName().Name, assemblySimpleName, StringComparison.OrdinalIgnoreCase))
+                    return loadedAssembly;
+            }
+            string assemblyPath = Path.Combine(AppContext.BaseDirectory, fileName);
+            if (!File.Exists(assemblyPath))
+                return null;
+            try
+            {
+                return AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+            }
+            catch (FileLoadException)
+            {
+                foreach (Assembly loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (string.Equals(loadedAssembly.GetName().Name, assemblySimpleName, StringComparison.OrdinalIgnoreCase))
+                        return loadedAssembly;
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static Assembly ResolveNet8ManagedDependency(AssemblyLoadContext context, AssemblyName assemblyName)
+        {
+            if (assemblyName.Name == "Steamworks.NET")
+                return TryLoadManagedDependency("Steamworks.NET.dll");
+            if (assemblyName.Name == "DGSteam" || assemblyName.Name == "Steam")
+                return TryLoadManagedDependency("DGSteam.dll");
+            return null;
+        }
+
+        private static void TryPreloadManagedDependency(string fileName)
+        {
+            TryLoadManagedDependency(fileName);
+        }
+#endif
+
         public static void RemotePlayConnected() => Windows_Audio.forceMode = AudioMode.DirectSound;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -795,7 +1023,7 @@ namespace DuckGame
           IntPtr wParam,
           IntPtr lParam);
         [HandleProcessCorruptedStateExceptions, SecurityCritical]
-        public static void UnhandledThreadExceptionTrapper(object sender, ThreadExceptionEventArgs e)
+        public static void UnhandledThreadExceptionTrapper(object sender, System.Windows.Forms.ThreadExceptionEventArgs e)
         {
             HandleGameCrash(e.Exception);
         }
@@ -817,7 +1045,7 @@ namespace DuckGame
                 StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
                 streamWriter.WriteLine(pLogMessage);
                 streamWriter.Close();
-                Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
+                TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
             }
         }
         public static string ProcessExceptionString(Exception e)
@@ -1079,15 +1307,15 @@ namespace DuckGame
                 }
                 catch (Exception) { }
                 num = 6;
-                if (File.Exists("CrashWindow.exe"))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && File.Exists("CrashWindow.exe"))
                 {
                     try
                     {
                         if (pModConfig != null)
-                            Process.Start("CrashWindow.exe", "-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
+                            TryStartCrashWindow("-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
                                 + " -modName " + str2 + " -source " + exception.Source + " -commandLine \"" + commandLine + "\" -executable \"" + Application.ExecutablePath + "\" " + DG.GetCrashWindowString(pException, pModConfig, str1));
                         else
-                            Process.Start("CrashWindow.exe", "-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
+                            TryStartCrashWindow("-modResponsible " + (flag1 ? "1" : "0") + " -modDisabled " + (!gameLoadedSuccessfully || Options.Data.disableModOnCrash ? (flag2 ? "1" : "0") : "2")
                                 + " -modName " + str2 + " -source " + exception.Source + " -commandLine \"" + commandLine + "\" -executable \"" + Application.ExecutablePath + "\" " + DG.GetCrashWindowString(pException, pAssembly, str1));
                     }
                     catch (Exception ex)

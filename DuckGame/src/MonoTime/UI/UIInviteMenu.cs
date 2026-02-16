@@ -199,7 +199,8 @@ namespace DuckGame
                     {
                         Steam.InviteUser(_users[_selection].user, Steam.lobby);
                     }
-                    else  TeamSelect2.InvitedFriend(_users[_selection].user);
+                    else
+                        TeamSelect2.InvitedFriend(_users[_selection].user);
                 }
             }
             base.Update();

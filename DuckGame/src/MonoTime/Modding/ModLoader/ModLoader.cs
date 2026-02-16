@@ -553,7 +553,7 @@ namespace DuckGame
         {
             if (!modsEnabled)
                 return "nomods";
-            using (SHA256Cng shA256Cng = new SHA256Cng())
+            using (SHA256 shA256Cng = SHA256.Create())
             {
                 _modString = string.Join("|", _sortedAccessibleMods.Where(a =>
                 {
