@@ -34,6 +34,7 @@
   <ItemGroup>
     <None Include="../deps/steam_appid.txt" Link="steam_appid.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="build/native/osx-arm64/*.dylib" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
+    <None Include="build/native/osx-x64/*.dylib" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="'$(RuntimeIdentifier)' == 'osx-x64'" />
   </ItemGroup>
 
   <ItemGroup>
