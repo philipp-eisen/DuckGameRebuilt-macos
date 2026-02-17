@@ -67,19 +67,3 @@ bun scripts/package-macos.ts --arch x64 --dmg
 ```
 
 Output: `dist/macos/`
-
-## GitHub Actions release
-
-The workflow at `.github/workflows/release-macos.yml` builds, signs, notarizes, and uploads `.dmg` files for both architectures.
-
-- **Tag push** (e.g. `git tag v1.2.3 && git push origin v1.2.3`): builds both arm64 and x64, uploads to the GitHub Release
-- **Manual dispatch**: trigger from Actions tab, optionally skip notarization for faster testing
-
-Required repository secrets:
-
-- `APPLE_CERTIFICATE_BASE64`
-- `APPLE_CERTIFICATE_PASSWORD`
-- `APPLE_SIGNING_IDENTITY`
-- `APPLE_ID`
-- `APPLE_TEAM_ID`
-- `APPLE_APP_SPECIFIC_PASSWORD`
