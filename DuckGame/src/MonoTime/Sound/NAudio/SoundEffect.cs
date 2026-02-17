@@ -1,6 +1,8 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+#if !DUCKGAME_NET8
 using NVorbis.NAudioSupport;
+#endif
 using System;
 using System.IO;
 using System.Text;
@@ -189,6 +191,9 @@ namespace DuckGame
                 waveStream = new AiffFileReader(pStream);
             else if (pExtension == "ogg")
             {
+#if DUCKGAME_NET8
+                return false;
+#else
                 waveStream = new VorbisWaveReader(pStream);
                 float num = 0f;
                 try
@@ -215,6 +220,7 @@ namespace DuckGame
                     num = 0f;
                 }
                 replaygainModifier = Math.Max(0f, Math.Min(1f, (float)((100f * (float)Math.Pow(10, num / 20)) / 100 * 1.9f)));
+#endif
             }
             if (waveStream == null)
                 return false;
