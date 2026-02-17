@@ -11,6 +11,13 @@ This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGame
 3. Make sure Steam is running and you are logged in with an account that owns [Duck Game](https://store.steampowered.com/app/312530/Duck_Game/)
 4. Launch the app
 
+## Known limitations (for now)
+
+- **Text-to-speech (TTS)** is currently disabled in the macOS/.NET 8 build.
+- **Some Windows-specific dialogs/crash tooling** are simplified on macOS.
+- **Windows GDI font generation** has not been fully ported yet, so font rendering may differ in some places.
+- **Mods** currently don't load properly on macOS.
+
 ## Upstream project
 
 - Main repository: [TheFlyingFoool/DuckGameRebuilt](https://github.com/TheFlyingFoool/DuckGameRebuilt)
