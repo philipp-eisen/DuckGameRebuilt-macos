@@ -1,5 +1,8 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+#if DUCKGAME_NET8
+using NVorbis;
+#endif
 #if !DUCKGAME_NET8
 using NVorbis.NAudioSupport;
 #endif
@@ -191,10 +194,6 @@ namespace DuckGame
                 waveStream = new AiffFileReader(pStream);
             else if (pExtension == "ogg")
             {
-#if DUCKGAME_NET8
-                return false;
-#else
-                waveStream = new VorbisWaveReader(pStream);
                 float num = 0f;
                 try
                 {
@@ -220,6 +219,10 @@ namespace DuckGame
                     num = 0f;
                 }
                 replaygainModifier = Math.Max(0f, Math.Min(1f, (float)((100f * (float)Math.Pow(10, num / 20)) / 100 * 1.9f)));
+#if DUCKGAME_NET8
+                waveStream = new VorbisSampleWaveStream(pStream);
+#else
+                waveStream = new VorbisWaveReader(pStream);
 #endif
             }
             if (waveStream == null)
@@ -314,4 +317,90 @@ namespace DuckGame
 
         public float[] Platform_GetData() => data;
     }
+
+#if DUCKGAME_NET8
+    internal class VorbisSampleWaveStream : WaveStream
+    {
+        private readonly VorbisReader _reader;
+        private readonly WaveFormat _format;
+        private readonly int _channels;
+        private readonly long _length;
+        private float[] _readBuffer;
+        private long _position;
+
+        public VorbisSampleWaveStream(Stream stream)
+        {
+            _reader = new VorbisReader(stream, false);
+            _channels = _reader.Channels;
+            _format = WaveFormat.CreateIeeeFloatWaveFormat(_reader.SampleRate, _channels);
+
+            long totalSamples = _reader.TotalSamples;
+            if (totalSamples < 0 && _reader.TotalTime > TimeSpan.Zero)
+                totalSamples = (long)(_reader.TotalTime.TotalSeconds * _reader.SampleRate);
+            if (totalSamples < 0)
+                totalSamples = 0;
+
+            _length = totalSamples * _channels * sizeof(float);
+            _readBuffer = new float[0];
+        }
+
+        public override WaveFormat WaveFormat => _format;
+
+        public override long Length => _length;
+
+        public override long Position
+        {
+            get => _position;
+            set => Seek(value, SeekOrigin.Begin);
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int sampleCount = count / sizeof(float);
+            if (sampleCount <= 0)
+                return 0;
+
+            if (_readBuffer.Length < sampleCount)
+                _readBuffer = new float[sampleCount];
+
+            int samplesRead = _reader.ReadSamples(_readBuffer, 0, sampleCount);
+            if (samplesRead <= 0)
+                return 0;
+
+            int bytesRead = samplesRead * sizeof(float);
+            Buffer.BlockCopy(_readBuffer, 0, buffer, offset, bytesRead);
+            _position += bytesRead;
+            return bytesRead;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long targetPosition = origin switch
+            {
+                SeekOrigin.Begin => offset,
+                SeekOrigin.Current => _position + offset,
+                SeekOrigin.End => _length + offset,
+                _ => _position,
+            };
+
+            if (targetPosition < 0)
+                targetPosition = 0;
+            if (targetPosition > _length)
+                targetPosition = _length;
+
+            long targetSamplePosition = targetPosition / sizeof(float);
+            long targetFrame = _channels > 0 ? targetSamplePosition / _channels : 0;
+            _reader.SamplePosition = targetFrame;
+            _position = targetFrame * _channels * sizeof(float);
+            return _position;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                _reader.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+#endif
 }
