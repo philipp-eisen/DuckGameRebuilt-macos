@@ -1,12 +1,15 @@
 # <img src="https://github.com/user-attachments/assets/1a6306e6-0fbb-4c3f-b1bd-1a96070efdd3" height="32"> Duck Game Rebuilt (macOS fork)
 
-This repository is a fork of Duck Game Rebuilt focused on macOS support.
+This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGameRebuilt) that adds native macOS builds for both Apple Silicon (arm64) and Intel (x64) Macs.
 
 ## How to play
 
-- Download the latest build from the [Releases page](https://github.com/philipp-eisen/DuckGameRebuilt-macos/releases/latest)
-- Ensure you have steam running
-- You must be logged into Steam with an account that owns [Duck Game](https://store.steampowered.com/app/312530/Duck_Game/)
+1. Download the latest `.dmg` from the [Releases page](https://github.com/philipp-eisen/DuckGameRebuilt-macos/releases/latest)
+   - **Apple Silicon** (M1/M2/M3/M4): `DuckGameRebuilt-macos-arm64.dmg`
+   - **Intel Mac**: `DuckGameRebuilt-macos-x64.dmg`
+2. Open the `.dmg` and drag `DuckGameRebuilt` to your Applications folder
+3. Make sure Steam is running and you are logged in with an account that owns [Duck Game](https://store.steampowered.com/app/312530/Duck_Game/)
+4. Launch the app
 
 ## Upstream project
 
@@ -14,39 +17,69 @@ This repository is a fork of Duck Game Rebuilt focused on macOS support.
 - Wiki: [DuckGameRebuilt Wiki](https://github.com/TheFlyingFoool/DuckGameRebuilt/wiki)
 - Discord: [Duck Game Rebuilt Discord](https://discord.gg/XkAjt744hz)
 
-For core gameplay/project docs, use the upstream repository and wiki.
+For core gameplay, project docs, and non-macOS platforms, see the upstream repo.
 
 ## Disclaimer
 
-- This fork only adds macOS build/distribution support.
-- I do not take any responsibility for purchase outcomes or compatibility issues, including situations where you buy Duck Game and it still does not run on your Mac.
+This fork only adds macOS build and distribution support. We do not take any responsibility for purchase outcomes or compatibility issues, including situations where you buy Duck Game and it does not run on your Mac.
 
-## Build on macOS (Apple Silicon)
+## Building from source
 
 Prerequisites:
 
 - Xcode Command Line Tools: `xcode-select --install`
 - Homebrew
-- .NET 8 SDK
-  - `brew update`
+- .NET 8 SDK:
   - `brew install dotnet@8`
-  - If needed, add to PATH:
-    - `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc`
-    - `source ~/.zshrc`
+  - If needed, add to PATH: `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc`
   - Verify: `dotnet --version` (should start with `8.`)
-- Bun runtime (used by build scripts):
+- Bun runtime (used by build/packaging scripts):
   - `brew install oven-sh/bun/bun`
-  - Verify: `bun --version`
 
-Publish the macOS build:
+### Publish
 
 ```bash
+# Apple Silicon (default)
 bun scripts/publish-macos.ts
+
+# Intel
+bun scripts/publish-macos.ts --arch x64
 ```
 
 Run from the publish folder:
 
 ```bash
-cd DuckGame/bin/Release/net8.0/osx-arm64/publish
-./DuckGame
+# arm64
+cd DuckGame/bin/Release/net8.0/osx-arm64/publish && ./DuckGame
+
+# x64
+cd DuckGame/bin/Release/net8.0/osx-x64/publish && ./DuckGame
 ```
+
+### Package `.app` and `.dmg`
+
+```bash
+# Apple Silicon .app + .dmg
+bun scripts/package-macos.ts --dmg
+
+# Intel .app + .dmg
+bun scripts/package-macos.ts --arch x64 --dmg
+```
+
+Output: `dist/macos/`
+
+## GitHub Actions release
+
+The workflow at `.github/workflows/release-macos.yml` builds, signs, notarizes, and uploads `.dmg` files for both architectures.
+
+- **Tag push** (e.g. `git tag v1.2.3 && git push origin v1.2.3`): builds both arm64 and x64, uploads to the GitHub Release
+- **Manual dispatch**: trigger from Actions tab, optionally skip notarization for faster testing
+
+Required repository secrets:
+
+- `APPLE_CERTIFICATE_BASE64`
+- `APPLE_CERTIFICATE_PASSWORD`
+- `APPLE_SIGNING_IDENTITY`
+- `APPLE_ID`
+- `APPLE_TEAM_ID`
+- `APPLE_APP_SPECIFIC_PASSWORD`

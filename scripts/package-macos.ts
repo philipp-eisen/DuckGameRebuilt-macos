@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
 /**
  * package-macos.ts -- Package the macOS build into a .app bundle and optional .dmg.
- * Replaces both package-macos-app.sh and package-macos-dmg.sh.
  *
  * Usage:
  *   bun scripts/package-macos.ts [options]
- *   bun scripts/package-macos.ts --dmg    # also create .dmg
+ *   bun scripts/package-macos.ts --dmg                # also create .dmg
+ *   bun scripts/package-macos.ts --arch x64 --dmg     # build for Intel
  */
 import { $ } from "bun";
 import { resolve, isAbsolute } from "path";
@@ -13,12 +13,11 @@ import { existsSync, mkdirSync } from "fs";
 import { parseArgs } from "util";
 
 const ROOT_DIR = resolve(import.meta.dir, "..");
-const PUBLISH_DIR = resolve(ROOT_DIR, "DuckGame/bin/Release/net8.0/osx-arm64/publish");
-const DIST_DIR = resolve(ROOT_DIR, "dist/macos");
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
+    arch: { type: "string", default: "arm64" },
     "skip-publish": { type: "boolean", default: false },
     "no-sign": { type: "boolean", default: false },
     "sign-identity": { type: "string", default: "" },
@@ -28,7 +27,7 @@ const { values } = parseArgs({
     "icon-source": { type: "string", default: "DuckGame/DuckGame.ico" },
     dmg: { type: "boolean", default: false },
     "volume-name": { type: "string", default: "DuckGameRebuilt" },
-    "dmg-name": { type: "string", default: "DuckGameRebuilt-macos-arm64.dmg" },
+    "dmg-name": { type: "string", default: "" },
     help: { type: "boolean", short: "h", default: false },
   },
 });
@@ -39,6 +38,7 @@ if (values.help) {
 Packages the macOS build into a .app bundle and optional .dmg.
 
 Options:
+  --arch ARCH            Target architecture: arm64 (default) or x64
   --skip-publish         Skip the dotnet publish step
   --no-sign              Skip code signing entirely
   --sign-identity ID     Developer ID for real code signing
@@ -48,17 +48,27 @@ Options:
   --icon-source PATH     Icon source file (default: DuckGame/DuckGame.ico)
   --dmg                  Also create a .dmg installer
   --volume-name NAME     DMG volume name (default: DuckGameRebuilt)
-  --dmg-name NAME        DMG filename (default: DuckGameRebuilt-macos-arm64.dmg)
+  --dmg-name NAME        DMG filename (default: DuckGameRebuilt-macos-<arch>.dmg)
   -h, --help             Show this help`);
   process.exit(0);
 }
+
+const arch = values.arch!;
+if (arch !== "arm64" && arch !== "x64") {
+  console.error(`Error: --arch must be "arm64" or "x64", got "${arch}"`);
+  process.exit(1);
+}
+
+const rid = `osx-${arch}`;
+const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net8.0/${rid}/publish`);
+const DIST_DIR = resolve(ROOT_DIR, "dist/macos");
 
 const appName = values["app-name"]!;
 const bundleId = values["bundle-id"]!;
 const signIdentity = values["sign-identity"]!;
 const createDmg = values.dmg!;
 const volumeName = values["volume-name"]!;
-const dmgName = values["dmg-name"]!;
+const dmgName = values["dmg-name"] || `DuckGameRebuilt-macos-${arch}.dmg`;
 
 let appVersion = values.version!;
 if (!appVersion) {
@@ -70,15 +80,15 @@ if (!isAbsolute(iconSource)) iconSource = resolve(ROOT_DIR, iconSource);
 
 // -- Step 1: Publish if needed --
 if (!values["skip-publish"]) {
-  console.log("==> Running publish...");
-  await $`bun ${resolve(ROOT_DIR, "scripts/publish-macos.ts")}`;
+  console.log(`==> Running publish for ${rid}...`);
+  await $`bun ${resolve(ROOT_DIR, "scripts/publish-macos.ts")} --arch ${arch}`;
   console.log();
 }
 
 const mainExe = resolve(PUBLISH_DIR, "DuckGame");
 if (!existsSync(mainExe)) {
   console.error(`Missing published executable at: ${mainExe}`);
-  console.error("Run bun scripts/publish-macos.ts first or use --skip-publish.");
+  console.error(`Run bun scripts/publish-macos.ts --arch ${arch} first or use --skip-publish.`);
   process.exit(1);
 }
 
@@ -88,7 +98,7 @@ const macosDir = resolve(appBundle, "Contents/MacOS");
 const resourcesDir = resolve(appBundle, "Contents/Resources");
 const plistPath = resolve(appBundle, "Contents/Info.plist");
 
-console.log(`==> Building ${appName}.app`);
+console.log(`==> Building ${appName}.app (${rid})`);
 await $`rm -rf ${appBundle}`;
 mkdirSync(macosDir, { recursive: true });
 await $`cp -R ${PUBLISH_DIR}/. ${macosDir}/`;

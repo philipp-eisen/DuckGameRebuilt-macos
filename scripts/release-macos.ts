@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * release-macos.ts -- Full macOS release pipeline:
- *   1. Build & publish (.NET 8 osx-arm64)
+ *   1. Build & publish (.NET 8 macOS)
  *   2. Package .app bundle
  *   3. Sign with Developer ID + hardened runtime (parallel)
  *   4. Package .dmg and sign it
@@ -9,7 +9,7 @@
  *   6. Staple notarization tickets
  *
  * Usage:
- *   bun scripts/release-macos.ts --identity "Developer ID Application: Name (TEAM_ID)"
+ *   bun scripts/release-macos.ts --identity "Developer ID Application: Name (TEAM_ID)" [--arch arm64|x64]
  */
 import { $ } from "bun";
 import { resolve } from "path";
@@ -21,12 +21,13 @@ const DIST_DIR = resolve(ROOT_DIR, "dist/macos");
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
+    arch: { type: "string", default: "arm64" },
     identity: { type: "string" },
     "keychain-profile": { type: "string", default: "DuckGameRebuilt-macos" },
     "app-name": { type: "string", default: "DuckGameRebuilt" },
     "bundle-id": { type: "string", default: "com.duckgamerebuilt.app" },
     version: { type: "string", default: "" },
-    "dmg-name": { type: "string", default: "DuckGameRebuilt-macos-arm64.dmg" },
+    "dmg-name": { type: "string", default: "" },
     "skip-publish": { type: "boolean", default: false },
     "skip-notarize": { type: "boolean", default: false },
     concurrency: { type: "string", default: "10" },
@@ -41,18 +42,25 @@ if (values.help) {
 Full macOS release pipeline: build, sign (parallel), package, notarize, staple.
 
 Options:
+  --arch ARCH                Target architecture: arm64 (default) or x64
   --identity IDENTITY        Code signing identity (required)
   --keychain-profile NAME    Notarytool keychain profile (default: DuckGameRebuilt-macos)
   --app-name NAME            App bundle name (default: DuckGameRebuilt)
   --bundle-id ID             CFBundleIdentifier (default: com.duckgamerebuilt.app)
   --version VERSION          Version string (default: git short hash)
-  --dmg-name NAME            DMG filename (default: DuckGameRebuilt-macos-arm64.dmg)
+  --dmg-name NAME            DMG filename (default: DuckGameRebuilt-macos-<arch>.dmg)
   --skip-publish             Skip dotnet publish (reuse existing build)
   --skip-notarize            Build and sign only, skip notarization
   --concurrency N            Parallel signing operations (default: 10)
   --verbose                  Verbose output
   -h, --help                 Show this help`);
   process.exit(0);
+}
+
+const arch = values.arch!;
+if (arch !== "arm64" && arch !== "x64") {
+  console.error(`Error: --arch must be "arm64" or "x64", got "${arch}"`);
+  process.exit(1);
 }
 
 const identity = values.identity;
@@ -68,13 +76,14 @@ if (!identity) {
 
 const appName = values["app-name"]!;
 const keychainProfile = values["keychain-profile"]!;
-const dmgName = values["dmg-name"]!;
+const dmgName = values["dmg-name"] || `DuckGameRebuilt-macos-${arch}.dmg`;
 const concurrency = values.concurrency!;
 
 console.log("============================================================");
 console.log("  DuckGameRebuilt macOS Release Pipeline");
 console.log("============================================================");
 console.log();
+console.log(`  Arch:        ${arch}`);
 console.log(`  Identity:    ${identity}`);
 console.log(`  Keychain:    ${keychainProfile}`);
 console.log(`  App Name:    ${appName}`);
@@ -92,6 +101,7 @@ console.log();
 
 const packageArgs = [
   resolve(ROOT_DIR, "scripts/package-macos.ts"),
+  "--arch", arch,
   "--sign-identity", identity,
   "--app-name", appName,
   "--bundle-id", values["bundle-id"]!,

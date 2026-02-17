@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /**
- * publish-macos.ts -- Build and publish the .NET 8 macOS arm64 build.
+ * publish-macos.ts -- Build and publish the .NET 8 macOS build.
  *
  * Usage:
- *   bun scripts/publish-macos.ts
+ *   bun scripts/publish-macos.ts [--arch arm64|x64]
  */
 import { $ } from "bun";
 import { resolve } from "path";
@@ -11,26 +11,40 @@ import { existsSync } from "fs";
 import { parseArgs } from "util";
 
 const ROOT_DIR = resolve(import.meta.dir, "..");
-const PUBLISH_DIR = resolve(ROOT_DIR, "DuckGame/bin/Release/net8.0/osx-arm64/publish");
-const NATIVE_DIR = resolve(ROOT_DIR, "DuckGame/build/native/osx-arm64");
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
+    arch: { type: "string", default: "arm64" },
     help: { type: "boolean", short: "h", default: false },
   },
 });
 
 if (values.help) {
-  console.log(`Usage: bun scripts/publish-macos.ts
+  console.log(`Usage: bun scripts/publish-macos.ts [--arch arm64|x64]
 
-Builds the .NET 8 macOS arm64 self-contained publish and stages assets.`);
+Builds the .NET 8 macOS self-contained publish and stages assets.
+
+Options:
+  --arch ARCH    Target architecture: arm64 (default) or x64`);
   process.exit(0);
 }
 
+const arch = values.arch!;
+if (arch !== "arm64" && arch !== "x64") {
+  console.error(`Error: --arch must be "arm64" or "x64", got "${arch}"`);
+  process.exit(1);
+}
+
+const rid = `osx-${arch}`;
+const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net8.0/${rid}/publish`);
+const NATIVE_DIR = resolve(ROOT_DIR, `DuckGame/build/native/${rid}`);
+
+console.log(`==> Publishing for ${rid}`);
+
 // -- Clean and publish --
 await $`rm -rf ${PUBLISH_DIR}`;
-await $`dotnet publish ${resolve(ROOT_DIR, "DuckGame/DuckGame.Net8.csproj")} -c Release -r osx-arm64 --self-contained true /p:PublishSingleFile=false`;
+await $`dotnet publish ${resolve(ROOT_DIR, "DuckGame/DuckGame.Net8.csproj")} -c Release -r ${rid} --self-contained true /p:PublishSingleFile=false`;
 
 // -- Patch Steamworks --
 const steamworksPath = resolve(PUBLISH_DIR, "Steamworks.NET.dll");
@@ -87,8 +101,10 @@ if (existsSync(sdlDylib)) {
 for (const name of ["libFNA3D.0.dylib", "libFAudio.0.dylib"]) {
   const dylib = resolve(PUBLISH_DIR, name);
   if (existsSync(dylib)) {
+    // Fix any SDL2 install name references to use @rpath
     await $`install_name_tool -change "/opt/homebrew/opt/sdl2/lib/libSDL2-2.0.0.dylib" "@rpath/libSDL2-2.0.0.dylib" ${dylib}`.nothrow();
     await $`install_name_tool -change "/opt/homebrew/lib/libSDL2-2.0.0.dylib" "@rpath/libSDL2-2.0.0.dylib" ${dylib}`.nothrow();
+    await $`install_name_tool -change "/tmp/x64-build/sdl2-install/lib/libSDL2-2.0.0.dylib" "@rpath/libSDL2-2.0.0.dylib" ${dylib}`.nothrow();
   }
 }
 

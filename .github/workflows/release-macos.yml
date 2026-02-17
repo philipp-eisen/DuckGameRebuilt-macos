@@ -13,8 +13,12 @@ on:
 
 jobs:
   build-sign-notarize:
-    runs-on: macos-14 # Apple Silicon runner
+    runs-on: macos-14
     timeout-minutes: 60
+
+    strategy:
+      matrix:
+        arch: [arm64, x64]
 
     steps:
       - name: Checkout code
@@ -83,11 +87,11 @@ jobs:
             --password "$APPLE_APP_SPECIFIC_PASSWORD"
 
       # -- Build, sign, notarize --
-      - name: Build, sign, and notarize
+      - name: Build, sign, and notarize (${{ matrix.arch }})
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          ARGS=(--identity "$APPLE_SIGNING_IDENTITY")
+          ARGS=(--arch "${{ matrix.arch }}" --identity "$APPLE_SIGNING_IDENTITY")
 
           # Use tag name as version, or 'dev' for dispatch runs
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
@@ -107,8 +111,8 @@ jobs:
       - name: Upload DMG as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DuckGameRebuilt-macos-arm64
-          path: dist/macos/DuckGameRebuilt-macos-arm64.dmg
+          name: DuckGameRebuilt-macos-${{ matrix.arch }}
+          path: dist/macos/DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
 
       # -- Upload DMG to GitHub Release (only on tag push) --
       - name: Upload DMG to release
@@ -116,8 +120,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/macos/DuckGameRebuilt-macos-arm64.dmg
-          asset_name: DuckGameRebuilt-macos-arm64.dmg
+          file: dist/macos/DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
+          asset_name: DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
           tag: ${{ github.ref }}
           overwrite: true
 
