@@ -386,3 +386,7 @@ deps/System.Runtime.CompilerServices.Unsafe.6.0.0/
 
 # Agent notes
 .agents/
+
+# Local macOS/generated artifacts
+.DS_Store
+/dist/
