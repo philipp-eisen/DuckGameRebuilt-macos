@@ -16,10 +16,7 @@ This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGame
 - **Text-to-speech (TTS)** is currently disabled in the macOS/.NET 8 build.
 - **Some Windows-specific dialogs/crash tooling** are simplified on macOS.
 - **Windows GDI font generation** has not been fully ported yet, so font rendering may differ in some places.
-- **Mods** mostly work now, but some Windows-centric mods still fail on macOS/.NET 8.
-- **Mods that bundle older Harmony/RuntimeDetour stacks** can fail in `OnPreInitialize` with `Permission denied` on Apple Silicon.
-- **Mods that depend on `System.Drawing.Common`/GDI+** can still throw `PlatformNotSupportedException` on non-Windows platforms.
-- **`-moddebug` behavior is intentionally strict**: mod initialization failures crash startup to surface the full stack trace.
+- **Some mods with Windows-only dependencies** do not work on macOS/.NET 8.
 
 ## Upstream project
 
