@@ -69,13 +69,25 @@ namespace XnaToFna
         public ILPlatform PreferredPlatform;
         public static Assembly Aassembly;
         public static int RemapVersion = 22;
+        private void TryMapDependencies(ModuleDefinition mod, string tag)
+        {
+            try
+            {
+                Modder.MapDependencies(mod);
+            }
+            catch (ArgumentNullException ex) when ((Program.IsLinuxD || Program.isLinux) && ex.ParamName == "path1")
+            {
+                Log(string.Format("[{0}] WARNING: MonoMod dependency mapping skipped due to platform path issue ({1})", tag, ex.Message));
+            }
+        }
+
         public void Stub(ModuleDefinition mod)
         {
             Log(string.Format("[Stub] Stubbing {0}", mod.Assembly.Name.Name));
             Modder.Module = mod;
             ApplyCommonChanges(mod, nameof(Stub));
             Log("[Stub] Mapping dependencies for MonoMod");
-            Modder.MapDependencies(mod);
+            TryMapDependencies(mod, nameof(Stub));
             Log("[Stub] Stubbing");
             foreach (TypeDefinition type in mod.Types)
                 StubType(type);
@@ -1119,7 +1131,7 @@ namespace XnaToFna
                     mod.AddAttribute(mod.ImportReference(m_UnverifiableCodeAttribute_ctor));
             }
             Log(string.Format("[{0}] Mapping dependencies for MonoMod", tag));
-            Modder.MapDependencies(mod);
+            TryMapDependencies(mod, tag);
         }
 
         public void LoadModules()

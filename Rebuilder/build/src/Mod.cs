@@ -52,27 +52,80 @@ namespace DuckGame.Cobalt
             return typeof(Program).GetField("CURRENT_VERSION_ID", BindingFlags.Public | BindingFlags.Static) is { IsLiteral: true, IsInitOnly: false };
         }
 
-        private string DGRFilePath => configuration.directory + "/dgr/DuckGame.exe";
-        private string PatchFilePath => configuration.directory + "/patch/quickload.patch";
-        private string BsDiffFilePath => configuration.directory + "/patch/BsDiff.dll";
-        private string SharpZipLibFilePath => configuration.directory + "/patch/ICSharpCode.SharpZipLib.dll";
+        private string ModDirectoryPath
+        {
+            get
+            {
+                if (configuration == null || string.IsNullOrWhiteSpace(configuration.directory))
+                    throw new InvalidOperationException("Mod configuration directory is unavailable.");
+                return configuration.directory;
+            }
+        }
+
+        private string DGRDirectoryPath => Path.Combine(ModDirectoryPath, "dgr");
+        private string DGRFilePath
+        {
+            get
+            {
+                string nativePath = Path.Combine(DGRDirectoryPath, "DuckGame");
+                if (File.Exists(nativePath))
+                    return nativePath;
+
+                string scriptPath = Path.Combine(DGRDirectoryPath, "DuckGame.sh");
+                if (File.Exists(scriptPath))
+                    return scriptPath;
+
+                string legacyPath = Path.Combine(DGRDirectoryPath, "DuckGame.exe");
+                if (File.Exists(legacyPath))
+                    return legacyPath;
+
+                throw new FileNotFoundException("Could not find a DGR executable in the mod dgr folder.", DGRDirectoryPath);
+            }
+        }
+
+        private string PatchFilePath => Path.Combine(ModDirectoryPath, "patch", "quickload.patch");
+        private string BsDiffFilePath => Path.Combine(ModDirectoryPath, "patch", "BsDiff.dll");
+        private string SharpZipLibFilePath => Path.Combine(ModDirectoryPath, "patch", "ICSharpCode.SharpZipLib.dll");
 
         private void RestartToDGR()
         {
-            Process.Start(DGRFilePath, Program.commandLine + $" -from \"{configuration.directory}\"");
+            string dgrPath = DGRFilePath;
+            string fromArg = " -from \"" + ModDirectoryPath + "\"";
+            string baseArgs = (Program.commandLine ?? string.Empty) + fromArg;
+
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            if (dgrPath.EndsWith(".sh", StringComparison.OrdinalIgnoreCase))
+            {
+                startInfo.FileName = "/bin/bash";
+                startInfo.Arguments = "\"" + dgrPath + "\" " + baseArgs;
+            }
+            else
+            {
+                startInfo.FileName = dgrPath;
+                startInfo.Arguments = baseArgs;
+            }
+
+            Process.Start(startInfo);
             Process.GetCurrentProcess().Kill();
         }
 
         private void SaveVanillaPath()
         {
-            File.WriteAllText(DuckFile.saveDirectory + "/vanilla_dg.path", typeof(ItemBox).Assembly.Location);
+            string vanillaPath = Path.Combine(DuckFile.saveDirectory, "vanilla_dg.path");
+            File.WriteAllText(vanillaPath, typeof(ItemBox).Assembly.Location);
         }
 
         // assuming this isn't already-patched dg...
         private void PatchForDGRQuickload()
         {
             string gamePath = typeof(ItemBox).Assembly.Location;
+            if (string.IsNullOrWhiteSpace(gamePath))
+                throw new InvalidOperationException("Could not resolve current Duck Game assembly location.");
+
             string root = Path.GetDirectoryName(gamePath);
+            if (string.IsNullOrWhiteSpace(root))
+                throw new InvalidOperationException("Could not resolve current Duck Game directory.");
+
             string tempGamePath = gamePath + ".tmp";
 
             // generate files
