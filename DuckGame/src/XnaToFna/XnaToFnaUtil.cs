@@ -68,7 +68,7 @@ namespace XnaToFna
         public List<string> FixPathsFor;
         public ILPlatform PreferredPlatform;
         public static Assembly Aassembly;
-        public static int RemapVersion = 22;
+        public static int RemapVersion = 23;
         private void TryMapDependencies(ModuleDefinition mod, string tag)
         {
             try
