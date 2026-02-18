@@ -481,6 +481,13 @@ namespace XnaToFna
                         ilProcessor.InsertAfter(method.Body.Instructions[0], ilProcessor.Create(OpCodes.Callvirt, method.Module.ImportReference(m_XnaToFnaHelper_PreUpdate)));
                         method.Body.UpdateOffsets(1, 2);
                     }
+                    bool hasModuleInitializerAttribute = method.CustomAttributes.Any(x => x.AttributeType.FullName == "System.Runtime.CompilerServices.ModuleInitializerAttribute");
+                    bool usesUnsafeAssemblyResolveFieldHook = method.Body.Instructions.Any(x => x.OpCode == OpCodes.Ldstr && (x.Operand as string) == "_AssemblyResolve");
+                    if (hasModuleInitializerAttribute && usesUnsafeAssemblyResolveFieldHook)
+                    {
+                        Log(string.Format("[PostProcess] Wrapping module initializer with unsafe AppDomain field hook in try/catch: {0}", method.GetFindableID()));
+                        AddTryCatchPatch(method);
+                    }
                     if (Modder.TranspilerMap.TryGetValue(methodId, out TranspilerMapEntry mapEntry))
                     {
                         InstructionCollection instructions = mapEntry.ProcessILCode(method.Body.Instructions.ToList(), method);
