@@ -16,7 +16,7 @@ This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGame
 - **Text-to-speech (TTS)** is currently disabled in the macOS/.NET 8 build.
 - **Some Windows-specific dialogs/crash tooling** are simplified on macOS.
 - **Windows GDI font generation** has not been fully ported yet, so font rendering may differ in some places.
-- **Mods** currently don't load properly on macOS.
+- **Some mods with Windows-only dependencies** do not work on macOS/.NET 8.
 
 ## Upstream project
 

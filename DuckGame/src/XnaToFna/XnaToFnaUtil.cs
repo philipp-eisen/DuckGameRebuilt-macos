@@ -68,14 +68,26 @@ namespace XnaToFna
         public List<string> FixPathsFor;
         public ILPlatform PreferredPlatform;
         public static Assembly Aassembly;
-        public static int RemapVersion = 22;
+        public static int RemapVersion = 23;
+        private void TryMapDependencies(ModuleDefinition mod, string tag)
+        {
+            try
+            {
+                Modder.MapDependencies(mod);
+            }
+            catch (ArgumentNullException ex) when ((Program.IsLinuxD || Program.isLinux) && ex.ParamName == "path1")
+            {
+                Log(string.Format("[{0}] WARNING: MonoMod dependency mapping skipped due to platform path issue ({1})", tag, ex.Message));
+            }
+        }
+
         public void Stub(ModuleDefinition mod)
         {
             Log(string.Format("[Stub] Stubbing {0}", mod.Assembly.Name.Name));
             Modder.Module = mod;
             ApplyCommonChanges(mod, nameof(Stub));
             Log("[Stub] Mapping dependencies for MonoMod");
-            Modder.MapDependencies(mod);
+            TryMapDependencies(mod, nameof(Stub));
             Log("[Stub] Stubbing");
             foreach (TypeDefinition type in mod.Types)
                 StubType(type);
@@ -468,6 +480,13 @@ namespace XnaToFna
                         ilProcessor.InsertBefore(method.Body.Instructions[0], ilProcessor.Create(OpCodes.Ldarg_1));
                         ilProcessor.InsertAfter(method.Body.Instructions[0], ilProcessor.Create(OpCodes.Callvirt, method.Module.ImportReference(m_XnaToFnaHelper_PreUpdate)));
                         method.Body.UpdateOffsets(1, 2);
+                    }
+                    bool hasModuleInitializerAttribute = method.CustomAttributes.Any(x => x.AttributeType.FullName == "System.Runtime.CompilerServices.ModuleInitializerAttribute");
+                    bool usesUnsafeAssemblyResolveFieldHook = method.Body.Instructions.Any(x => x.OpCode == OpCodes.Ldstr && (x.Operand as string) == "_AssemblyResolve");
+                    if (hasModuleInitializerAttribute && usesUnsafeAssemblyResolveFieldHook)
+                    {
+                        Log(string.Format("[PostProcess] Wrapping module initializer with unsafe AppDomain field hook in try/catch: {0}", method.GetFindableID()));
+                        AddTryCatchPatch(method);
                     }
                     if (Modder.TranspilerMap.TryGetValue(methodId, out TranspilerMapEntry mapEntry))
                     {
@@ -1119,7 +1138,7 @@ namespace XnaToFna
                     mod.AddAttribute(mod.ImportReference(m_UnverifiableCodeAttribute_ctor));
             }
             Log(string.Format("[{0}] Mapping dependencies for MonoMod", tag));
-            Modder.MapDependencies(mod);
+            TryMapDependencies(mod, tag);
         }
 
         public void LoadModules()

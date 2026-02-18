@@ -505,7 +505,14 @@ namespace DuckGame
                             string assemblypath = modConfig.isDynamic ? modConfig.tempAssemblyPath : modConfig.assemblyPath;
                             if (modConfig.noRecompilation)
                             {
-                                modConfig.assembly = Assembly.Load(File.ReadAllBytes(assemblypath));
+                                try
+                                {
+                                    modConfig.assembly = Assembly.LoadFile(Path.GetFullPath(assemblypath));
+                                }
+                                catch (Exception)
+                                {
+                                    FixLoadAssembly(modConfig, assemblypath);
+                                }
                             }
                             else
                             {

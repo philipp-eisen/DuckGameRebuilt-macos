@@ -651,7 +651,18 @@ namespace DuckGame
                     {
 						string errorPath = DuckFile.saveDirectory + "error_info.txt";
 						File.WriteAllText(errorPath, _selectedMod.configuration.error);
-						Process.Start(errorPath);
+						try
+						{
+							Process.Start(new ProcessStartInfo
+							{
+								FileName = errorPath,
+								UseShellExecute = true,
+							});
+						}
+						catch (Exception ex)
+						{
+							DevConsole.Log("Failed to open mod error file: " + ex.Message);
+						}
 						//showingError = _selectedMod.configuration.error;
                         SFX.Play("rockHitGround", 0.8f);
                         return;
