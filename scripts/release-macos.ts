@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * release-macos.ts -- Full macOS release pipeline:
- *   1. Build & publish (.NET 8 macOS)
+ *   1. Build & publish (.NET 10 macOS)
  *   2. Package .app bundle
  *   3. Sign with Developer ID + hardened runtime (parallel)
  *   4. Package .dmg and sign it

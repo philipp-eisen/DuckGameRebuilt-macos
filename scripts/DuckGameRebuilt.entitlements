@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- .NET 8 runtime uses JIT compilation -->
+  <!-- .NET 10 runtime uses JIT compilation -->
   <key>com.apple.security.cs.allow-jit</key>
   <true/>
 

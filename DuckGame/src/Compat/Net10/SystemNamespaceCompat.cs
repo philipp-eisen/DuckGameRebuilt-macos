@@ -1,4 +1,4 @@
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
 namespace System.Web
 {
 }

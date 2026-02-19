@@ -13,10 +13,10 @@ This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGame
 
 ## Known limitations (for now)
 
-- **Text-to-speech (TTS)** is currently disabled in the macOS/.NET 8 build.
+- **Text-to-speech (TTS)** is currently disabled in the macOS/.NET 10 build.
 - **Some Windows-specific dialogs/crash tooling** are simplified on macOS.
 - **Windows GDI font generation** has not been fully ported yet, so font rendering may differ in some places.
-- **Some mods with Windows-only dependencies** do not work on macOS/.NET 8.
+- **Some mods with Windows-only dependencies** do not work on macOS/.NET 10.
 
 ## Upstream project
 
@@ -36,10 +36,9 @@ Prerequisites:
 
 - Xcode Command Line Tools: `xcode-select --install`
 - Homebrew
-- .NET 8 SDK:
-  - `brew install dotnet@8`
-  - If needed, add to PATH: `echo 'export PATH="$(brew --prefix dotnet@8)/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc`
-  - Verify: `dotnet --version` (should start with `8.`)
+- .NET 10 SDK:
+  - `brew install dotnet`
+  - Verify: `dotnet --version` (should start with `10.`)
 - Bun runtime (used by build/packaging scripts):
   - `brew install oven-sh/bun/bun`
 
@@ -57,10 +56,10 @@ Run from the publish folder:
 
 ```bash
 # arm64
-cd DuckGame/bin/Release/net8.0/osx-arm64/publish && ./DuckGame
+cd DuckGame/bin/Release/net10.0/osx-arm64/publish && ./DuckGame
 
 # x64
-cd DuckGame/bin/Release/net8.0/osx-x64/publish && ./DuckGame
+cd DuckGame/bin/Release/net10.0/osx-x64/publish && ./DuckGame
 ```
 
 ### Package `.app` and `.dmg`

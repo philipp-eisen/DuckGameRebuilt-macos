@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Runtime.ExceptionServices;
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
 using System.Runtime.Loader;
 #endif
 
@@ -145,13 +145,13 @@ namespace DuckGame
             DevConsole.Log("|PINK|DGR |WHITE|Version " + gitVersion);
             int p = (int)Environment.OSVersion.Platform;
             IsLinuxD = (p == 4) || (p == 6) || (p == 128);
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
             TryPreloadManagedDependency("Steamworks.NET.dll");
             TryPreloadManagedDependency("DGSteam.dll");
 #endif
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Resolve);
-#if DUCKGAME_NET8
-            AssemblyLoadContext.Default.Resolving += ResolveNet8ManagedDependency;
+#if DUCKGAME_NET10
+            AssemblyLoadContext.Default.Resolving += ResolveNet10ManagedDependency;
 #endif
             if (IsLinuxD)
             {
@@ -211,7 +211,7 @@ namespace DuckGame
             {
                 return false;
             }
-#if !DUCKGAME_NET8
+#if !DUCKGAME_NET10
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
                 while (tries > 0)
@@ -260,7 +260,7 @@ namespace DuckGame
         {
             if (args.Name.StartsWith("Steamworks.NET,", StringComparison.Ordinal))
             {
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
                 Assembly steamworksAssembly = TryLoadManagedDependency("Steamworks.NET.dll");
                 if (steamworksAssembly != null)
                     return steamworksAssembly;
@@ -283,7 +283,7 @@ namespace DuckGame
                 Assembly steamAssembly = Assembly.GetAssembly(typeof(Steam));
                 if (steamAssembly != null)
                     return steamAssembly;
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
                 steamAssembly = TryLoadManagedDependency("DGSteam.dll");
                 if (steamAssembly != null)
                     return steamAssembly;
@@ -919,7 +919,7 @@ namespace DuckGame
 
         private static bool IsMacOSRuntime()
         {
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
             return OperatingSystem.IsMacOS();
 #else
             PlatformID platform = Environment.OSVersion.Platform;
@@ -968,7 +968,7 @@ namespace DuckGame
             Process.Start("CrashWindow.exe", args);
         }
 
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
         private static Assembly TryLoadManagedDependency(string fileName)
         {
             string assemblySimpleName = Path.GetFileNameWithoutExtension(fileName);
@@ -999,7 +999,7 @@ namespace DuckGame
             }
         }
 
-        private static Assembly ResolveNet8ManagedDependency(AssemblyLoadContext context, AssemblyName assemblyName)
+        private static Assembly ResolveNet10ManagedDependency(AssemblyLoadContext context, AssemblyName assemblyName)
         {
             if (assemblyName.Name == "Steamworks.NET")
                 return TryLoadManagedDependency("Steamworks.NET.dll");

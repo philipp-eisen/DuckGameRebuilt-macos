@@ -1,9 +1,9 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
 using NVorbis;
 #endif
-#if !DUCKGAME_NET8
+#if !DUCKGAME_NET10
 using NVorbis.NAudioSupport;
 #endif
 using System;
@@ -219,7 +219,7 @@ namespace DuckGame
                     num = 0f;
                 }
                 replaygainModifier = Math.Max(0f, Math.Min(1f, (float)((100f * (float)Math.Pow(10, num / 20)) / 100 * 1.9f)));
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
                 waveStream = new VorbisSampleWaveStream(pStream);
 #else
                 waveStream = new VorbisWaveReader(pStream);
@@ -318,7 +318,7 @@ namespace DuckGame
         public float[] Platform_GetData() => data;
     }
 
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
     internal class VorbisSampleWaveStream : WaveStream
     {
         private readonly VorbisReader _reader;

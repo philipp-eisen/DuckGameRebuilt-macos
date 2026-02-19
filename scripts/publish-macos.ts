@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * publish-macos.ts -- Build and publish the .NET 8 macOS build.
+ * publish-macos.ts -- Build and publish the .NET 10 macOS build.
  *
  * Usage:
  *   bun scripts/publish-macos.ts [--arch arm64|x64]
@@ -23,7 +23,7 @@ const { values } = parseArgs({
 if (values.help) {
   console.log(`Usage: bun scripts/publish-macos.ts [--arch arm64|x64]
 
-Builds the .NET 8 macOS self-contained publish and stages assets.
+Builds the .NET 10 macOS self-contained publish and stages assets.
 
 Options:
   --arch ARCH    Target architecture: arm64 (default) or x64`);
@@ -37,14 +37,14 @@ if (arch !== "arm64" && arch !== "x64") {
 }
 
 const rid = `osx-${arch}`;
-const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net8.0/${rid}/publish`);
+const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net10.0/${rid}/publish`);
 const NATIVE_DIR = resolve(ROOT_DIR, `DuckGame/build/native/${rid}`);
 
 console.log(`==> Publishing for ${rid}`);
 
 // -- Clean and publish --
 await $`rm -rf ${PUBLISH_DIR}`;
-await $`dotnet publish ${resolve(ROOT_DIR, "DuckGame/DuckGame.Net8.csproj")} -c Release -r ${rid} --self-contained true /p:PublishSingleFile=false`;
+await $`dotnet publish ${resolve(ROOT_DIR, "DuckGame/DuckGame.Net10.csproj")} -c Release -r ${rid} --self-contained true /p:PublishSingleFile=false`;
 
 // -- Patch Steamworks --
 const steamworksPath = resolve(PUBLISH_DIR, "Steamworks.NET.dll");

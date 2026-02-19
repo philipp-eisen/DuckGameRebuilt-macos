@@ -60,7 +60,7 @@ if (arch !== "arm64" && arch !== "x64") {
 }
 
 const rid = `osx-${arch}`;
-const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net8.0/${rid}/publish`);
+const PUBLISH_DIR = resolve(ROOT_DIR, `DuckGame/bin/Release/net10.0/${rid}/publish`);
 const DIST_DIR = resolve(ROOT_DIR, "dist/macos");
 
 const appName = values["app-name"]!;

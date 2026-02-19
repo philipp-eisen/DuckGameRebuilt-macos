@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>DuckGame</AssemblyName>
     <RootNamespace>DuckGame</RootNamespace>
     <StartupObject>DuckGame.Program</StartupObject>
@@ -10,7 +10,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DefineConstants>TRACE;DuckGame;DUCKGAME_NET8</DefineConstants>
+    <DefineConstants>TRACE;DuckGame;DUCKGAME_NET10</DefineConstants>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">osx-arm64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Steam/Steam.Net8.csproj" />
+    <ProjectReference Include="../Steam/Steam.Net10.csproj" />
     <ProjectReference Include="../FNA/FNA.Core.csproj" />
   </ItemGroup>
 

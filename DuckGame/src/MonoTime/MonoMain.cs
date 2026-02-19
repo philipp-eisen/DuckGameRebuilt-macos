@@ -589,7 +589,7 @@ namespace DuckGame
                     ResetInfiniteLoopTimer();
                 if (_loopTimer.Elapsed.TotalSeconds > 5d)
                 {
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
                     infiniteLoopDetails = "Infinite loop crash: " + GetInfiniteLoopDetails();
                     hadInfiniteLoop = true;
                     System.Diagnostics.Debug.WriteLine(infiniteLoopDetails);
@@ -621,8 +621,8 @@ namespace DuckGame
 
         public static string GetInfiniteLoopDetails()
         {
-#if DUCKGAME_NET8
-            // StackTrace on .NET 8 here would be the detector thread, not the hung main thread.
+#if DUCKGAME_NET10
+            // StackTrace on .NET 10 here would be the detector thread, not the hung main thread.
             int threadId = mainThread != null ? mainThread.ManagedThreadId : -1;
             return "[net8] main-thread stack capture is unsupported; no main-thread stack trace available (mainThreadId=" + threadId + ")";
 #else

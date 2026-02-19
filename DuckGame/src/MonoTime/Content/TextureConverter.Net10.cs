@@ -1,4 +1,4 @@
-#if DUCKGAME_NET8
+#if DUCKGAME_NET10
 using Microsoft.Xna.Framework.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
