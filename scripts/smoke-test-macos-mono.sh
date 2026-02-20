@@ -18,8 +18,9 @@ GAME_PID=$!
 sleep "$RUNTIME_SECONDS"
 
 if ! kill -0 "$GAME_PID" 2>/dev/null; then
-  wait "$GAME_PID"
+  wait "$GAME_PID" || true
   echo "DuckGame exited before smoke-test timeout." >&2
+  echo "Log: $LOG_PATH" >&2
   exit 1
 fi
 
