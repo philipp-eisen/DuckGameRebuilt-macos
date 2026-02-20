@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install mono cmake sdl2
+          brew install mono mono-libgdiplus cmake sdl2
 
       - name: Build with Mono
         run: ./scripts/build-macos-mono.sh Release

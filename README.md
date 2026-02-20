@@ -46,7 +46,7 @@ Note: your IDE will scream at you with 200+ warnings when building, which is nor
 ### Building on macOS (Mono)
 
 * Install build dependencies with Homebrew
-  * `brew install mono nuget cmake sdl2`
+  * `brew install mono mono-libgdiplus nuget cmake sdl2`
 * Build the game and native macOS libraries
   * `./scripts/build-macos-mono.sh Release`
 * Run a short smoke test without Steam
