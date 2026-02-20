@@ -1,0 +1,50 @@
+name: Build macOS (Mono)
+
+on:
+  workflow_dispatch:
+  release:
+    branches: [ "master" ]
+    types: [published]
+
+jobs:
+  build_macos_mono:
+    runs-on: macos-14
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install mono cmake sdl2
+
+      - name: Build with Mono
+        run: ./scripts/build-macos-mono.sh Release
+
+      - name: Runtime smoke test
+        run: ./scripts/smoke-test-macos-mono.sh 15
+
+      - name: Package binaries
+        run: |
+          rm -rf ./dist/DuckGameRebuilt-macos-mono
+          mkdir -p ./dist/DuckGameRebuilt-macos-mono
+          cp -R ./bin/. ./dist/DuckGameRebuilt-macos-mono/
+          cd ./dist && zip -r DuckGameRebuilt-macos-mono.zip ./DuckGameRebuilt-macos-mono
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuckGameRebuilt-macos-mono
+          path: ./dist/DuckGameRebuilt-macos-mono.zip
+
+      - name: Upload artifact to release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./dist/DuckGameRebuilt-macos-mono.zip
+          asset_name: DuckGameRebuilt-macos-mono.zip
+          overwrite: true
