@@ -226,6 +226,7 @@ if ! MONO_CMD="$(resolve_mono)"; then
 fi
 
 export DYLD_FALLBACK_LIBRARY_PATH="$GAME_DIR:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+export MONO_PATH="$GAME_DIR/OSX-Linux-x64:${MONO_PATH:-}"
 cd "$GAME_DIR"
 exec "$MONO_CMD" "./DuckGame.exe" "$@"
 EOF
