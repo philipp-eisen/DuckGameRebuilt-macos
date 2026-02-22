@@ -52,3 +52,8 @@ Note: your IDE will scream at you with 200+ warnings when building, which is nor
 * Run the game from the build output
   * `./bin/DuckGame.sh -nosteam`
   * Omit `-nosteam` when Steam is running and `steam_api` is available
+* Package app bundle and DMG (shell script)
+  * `./scripts/package-macos.sh --configuration Release --dmg`
+* Sign in parallel, package, and notarize (shell pipeline)
+  * `./scripts/release-macos.sh --identity "Developer ID Application: Your Name (TEAM_ID)"`
+  * Set up notary credentials once: `xcrun notarytool store-credentials "DuckGameRebuilt-macos" --apple-id "you@example.com" --team-id "TEAMID" --password "app-specific-password"`
