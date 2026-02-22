@@ -253,9 +253,7 @@ namespace DGWindows
             catch (Exception ex)
             {
                 string pLogMessage = ProcessErrorLine(e.ExceptionObject.ToString(), e.ExceptionObject as Exception);
-                StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                streamWriter.WriteLine(pLogMessage);
-                streamWriter.Close();
+                Program.AppendDuckLog(pLogMessage);
                 Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + (e.ExceptionObject as Exception).Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + GetCrashWindowString(ex, null, pLogMessage));
             }
         }

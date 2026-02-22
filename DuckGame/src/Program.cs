@@ -67,6 +67,7 @@ namespace DuckGame
         public static bool enteredMain = false;
         public static string steamInitializeError = "";
         public static int steamBuildID = 0;
+        private static string _duckLogPath;
         //private const uint WM_CLOSE = 16;
         public static bool isLinux = false; //old system to keep wine support
         public static string wineVersion = null;
@@ -251,6 +252,35 @@ namespace DuckGame
         }
         public static Assembly ModResolve(object sender, ResolveEventArgs args) => ManagedContent.ResolveModAssembly(sender, args);
 
+        public static string DuckLogPath()
+        {
+            if (_duckLogPath != null)
+                return _duckLogPath;
+            try
+            {
+                string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DuckGame");
+                Directory.CreateDirectory(path);
+                _duckLogPath = Path.Combine(path, "ducklog.txt");
+            }
+            catch
+            {
+                _duckLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ducklog.txt");
+            }
+
+            return _duckLogPath;
+        }
+
+        public static void AppendDuckLog(string pMessage)
+        {
+            try
+            {
+                File.AppendAllText(DuckLogPath(), pMessage + "\n");
+            }
+            catch
+            {
+            }
+        }
+
         public static Assembly Resolve(object sender, ResolveEventArgs args)
         {
             if (!enteredMain)
@@ -282,9 +312,7 @@ namespace DuckGame
                     string str = "Failed to resolve assembly:\n" + args.Name + "\n";
                     if (args.Name.Contains("Microsoft.Xna.Framework"))
                         str += "(You may need to install the XNA redistributables!)\n";
-                    StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                    streamWriter.WriteLine(str);
-                    streamWriter.Close();
+                    AppendDuckLog(str);
                     Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
                 }
             }
@@ -822,9 +850,7 @@ namespace DuckGame
             catch (Exception ex)
             {
                 string pLogMessage = WindowsPlatformStartup.ProcessErrorLine(e.Exception.ToString(), e.Exception);
-                StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                streamWriter.WriteLine(pLogMessage);
-                streamWriter.Close();
+                AppendDuckLog(pLogMessage);
                 Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
             }
         }
@@ -1115,9 +1141,7 @@ namespace DuckGame
                 }
                 catch (Exception)
                 {
-                    StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                    streamWriter.WriteLine("Failed to write exception to log: " + ex3.Message + "\n");
-                    streamWriter.Close();
+                    AppendDuckLog("Failed to write exception to log: " + ex3.Message + "\n");
                 }
             }
         }
@@ -1126,18 +1150,7 @@ namespace DuckGame
 
         public static void WriteToLog(string s, bool modRelated)
         {
-            try
-            {
-                StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                streamWriter.WriteLine(s + "\n");
-                streamWriter.Close();
-            }
-            catch (Exception ex)
-            {
-                StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                streamWriter.WriteLine(ex.ToString() + "\n");
-                streamWriter.Close();
-            }
+            AppendDuckLog(s + "\n");
         }
 
         public static void MakeNetLog()
@@ -1183,13 +1196,7 @@ namespace DuckGame
 
         public static void LogLine(string line)
         {
-            try
-            {
-                StreamWriter streamWriter = new StreamWriter("ducklog.txt", true);
-                streamWriter.WriteLine(line + "\n");
-                streamWriter.Close();
-            }
-            catch { }
+            AppendDuckLog(line + "\n");
         }
         private static Dictionary<string, string> escapeMapping = new Dictionary<string, string>()
         {
