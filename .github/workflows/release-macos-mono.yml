@@ -1,0 +1,131 @@
+name: Release macOS DMG
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      skip_notarize:
+        description: "Skip notarization (for testing)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-sign-notarize:
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    env:
+      SKIP_NOTARIZE: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_notarize || 'false' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          brew install mono mono-libgdiplus nuget cmake sdl2
+
+      - name: Import code signing certificate
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 20)"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+          rm -f "$CERT_PATH"
+
+      - name: Store notarization credentials
+        if: ${{ env.SKIP_NOTARIZE != 'true' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "DuckGameRebuilt-macos" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD"
+
+      - name: Build, sign, and notarize (${{ matrix.arch }})
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
+            VERSION="$RELEASE_TAG"
+            VERSION="${VERSION#v}"
+            if [[ ! "$VERSION" =~ ^[0-9A-Za-z._+-]+$ ]]; then
+              echo "Invalid release tag for version: $RELEASE_TAG" >&2
+              exit 1
+            fi
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
+          fi
+
+          ARGS=(
+            --identity "$APPLE_SIGNING_IDENTITY"
+            --configuration Release
+            --version "$VERSION"
+            --dmg-name "DuckGameRebuilt-macos-${{ matrix.arch }}.dmg"
+          )
+
+          if [[ "$SKIP_NOTARIZE" == "true" ]]; then
+            ARGS+=(--skip-notarize)
+          fi
+
+          ./scripts/release-macos.sh "${ARGS[@]}"
+
+      - name: Upload DMG package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuckGameRebuilt-macos-${{ matrix.arch }}
+          path: dist/macos/DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
+
+      - name: Upload DMG to release assets
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/macos/DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
+          asset_name: DuckGameRebuilt-macos-${{ matrix.arch }}.dmg
+          tag: ${{ github.event.release.tag_name }}
+          overwrite: true
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          if [[ -f "$KEYCHAIN_PATH" ]]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
