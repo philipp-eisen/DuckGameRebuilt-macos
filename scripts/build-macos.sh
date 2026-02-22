@@ -120,8 +120,9 @@ xbuild \
   /p:SolutionDir="$ROOT_DIR/" \
   "$ROOT_DIR/DuckGame/DuckGame.csproj"
 
-echo "[4/4] Copying runtime macOS libraries"
+echo "[4/4] Copying runtime files"
 mkdir -p "$ROOT_DIR/bin"
+cp -f "$ROOT_DIR"/DuckGame/lib/* "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/FAudio/build/libFAudio.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/FNA3D/build/libFNA3D.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/Theorafile/libtheorafile.dylib" "$ROOT_DIR/bin/"
