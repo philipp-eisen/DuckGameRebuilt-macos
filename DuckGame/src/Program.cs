@@ -191,6 +191,7 @@ namespace DuckGame
         {
             int tries = 10;
             int p = (int)Environment.OSVersion.Platform;
+            bool skipSteamworksCopy = Environment.GetEnvironmentVariable("DGR_SKIP_STEAMWORKS_COPY") == "1";
             IsLinuxD = (p == 4) || (p == 6) || (p == 128);
             // if (!IS_DEV_BUILD)
             // {
@@ -202,32 +203,39 @@ namespace DuckGame
             }
             try // IMPROVEME, i try catch this because when restarting with the ingame restarting thing, it would crash because this was still in use
             {   // also this should really be doing some kind of like cache thing so it doesnt do this everytime
-                while (tries > 0)
+                if (IsLinuxD && skipSteamworksCopy)
                 {
-                    if (File.Exists(GameDirectory + "Steamworks.NET.dll"))
-                    {
-                        File.Delete(GameDirectory + "Steamworks.NET.dll");
-                        tries -= 1;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                if (IsLinuxD)
-                {
-                    DevConsole.Log("|PINK|DGR |WHITE|Setting dll to LinuxSteamworks");
-                    File.Copy(GameDirectory + "OSX-Linux-x64//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
-                }
-                else if (Environment.Is64BitProcess)
-                {
-                    DevConsole.Log("|PINK|DGR |WHITE|Setting dll to WindowsSteamx64"); //this is left over from me thinking about building for 64 bit, i dont want to build FNA my self so no
-                    File.Copy(GameDirectory + "Windows-x64//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
+                    DevConsole.Log("|PINK|DGR |WHITE|Skipping steamworks dll copy via DGR_SKIP_STEAMWORKS_COPY");
                 }
                 else
                 {
-                    DevConsole.Log("|PINK|DGR |WHITE|Setting dll to WindowsSteamx86");
-                    File.Copy(GameDirectory + "Windows-x86//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
+                    while (tries > 0)
+                    {
+                        if (File.Exists(GameDirectory + "Steamworks.NET.dll"))
+                        {
+                            File.Delete(GameDirectory + "Steamworks.NET.dll");
+                            tries -= 1;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (IsLinuxD)
+                    {
+                        DevConsole.Log("|PINK|DGR |WHITE|Setting dll to LinuxSteamworks");
+                        File.Copy(GameDirectory + "OSX-Linux-x64//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
+                    }
+                    else if (Environment.Is64BitProcess)
+                    {
+                        DevConsole.Log("|PINK|DGR |WHITE|Setting dll to WindowsSteamx64"); //this is left over from me thinking about building for 64 bit, i dont want to build FNA my self so no
+                        File.Copy(GameDirectory + "Windows-x64//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
+                    }
+                    else
+                    {
+                        DevConsole.Log("|PINK|DGR |WHITE|Setting dll to WindowsSteamx86");
+                        File.Copy(GameDirectory + "Windows-x86//Steamworks.NET.dll", GameDirectory + "Steamworks.NET.dll");
+                    }
                 }
             }
             catch
