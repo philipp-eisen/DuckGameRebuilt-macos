@@ -17,6 +17,18 @@ copy_sdl2_dylib() {
   local sdl2_dylib=""
   local brew_prefix=""
 
+  if [[ -n "${SDL2_DYLIB:-}" && -f "$SDL2_DYLIB" ]]; then
+    sdl2_dylib="$SDL2_DYLIB"
+  fi
+
+  if [[ -z "$sdl2_dylib" ]] && command -v pkg-config >/dev/null 2>&1; then
+    local sdl2_libdir
+    sdl2_libdir="$(pkg-config --variable=libdir sdl2 2>/dev/null || true)"
+    if [[ -n "$sdl2_libdir" && -f "$sdl2_libdir/libSDL2-2.0.0.dylib" ]]; then
+      sdl2_dylib="$sdl2_libdir/libSDL2-2.0.0.dylib"
+    fi
+  fi
+
   if command -v brew >/dev/null 2>&1; then
     brew_prefix="$(brew --prefix sdl2 2>/dev/null || true)"
     if [[ -n "$brew_prefix" && -f "$brew_prefix/lib/libSDL2-2.0.0.dylib" ]]; then
@@ -43,6 +55,23 @@ copy_sdl2_dylib() {
 copy_libgdiplus_dylib() {
   local gdiplus_dylib=""
   local brew_prefix=""
+
+  if [[ -n "${LIBGDIPLUS_DYLIB:-}" && -f "$LIBGDIPLUS_DYLIB" ]]; then
+    gdiplus_dylib="$LIBGDIPLUS_DYLIB"
+  fi
+
+  if [[ -z "$gdiplus_dylib" ]] && command -v pkg-config >/dev/null 2>&1; then
+    local gdiplus_libdir
+    gdiplus_libdir="$(pkg-config --variable=libdir libgdiplus 2>/dev/null || true)"
+    if [[ -n "$gdiplus_libdir" && -f "$gdiplus_libdir/libgdiplus.dylib" ]]; then
+      gdiplus_dylib="$gdiplus_libdir/libgdiplus.dylib"
+    else
+      gdiplus_libdir="$(pkg-config --variable=libdir gdiplus 2>/dev/null || true)"
+      if [[ -n "$gdiplus_libdir" && -f "$gdiplus_libdir/libgdiplus.dylib" ]]; then
+        gdiplus_dylib="$gdiplus_libdir/libgdiplus.dylib"
+      fi
+    fi
+  fi
 
   if command -v brew >/dev/null 2>&1; then
     brew_prefix="$(brew --prefix mono-libgdiplus 2>/dev/null || true)"
