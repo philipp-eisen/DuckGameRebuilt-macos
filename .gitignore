@@ -371,8 +371,12 @@ unnamedtexs/unnamed MTSpriteBatch.DoDrawInternal^MTSpriteBatch.DrawWithMaterial^
 dottrace/
 
 version.txt
-.editorconfig
-.editorconfig
 /DuckGame/SlnPath.txt
 .idea
 DGR-Mod/DGR-Mod.dll
+
+# macOS Mono build and packaging artifacts
+.DS_Store
+/dist/
+/FNA/lib/*/build/
+/FNA/lib/Theorafile/libtheorafile.dylib
