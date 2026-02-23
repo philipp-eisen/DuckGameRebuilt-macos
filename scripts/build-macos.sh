@@ -114,15 +114,28 @@ cmake --build "$ROOT_DIR/FNA/lib/FNA3D/build" --config Release --parallel "$CPU_
 
 make -C "$ROOT_DIR/FNA/lib/Theorafile"
 
-echo "[3/4] Building DuckGame ($CONFIGURATION) with Mono"
+echo "[3/6] Rebuilding Steam managed assembly ($CONFIGURATION)"
 xbuild \
+  /t:Rebuild \
+  /p:Configuration="$CONFIGURATION" \
+  "$ROOT_DIR/Steam/Steam.csproj"
+
+echo "[4/6] Rebuilding FNA managed assembly ($CONFIGURATION)"
+xbuild \
+  /t:Rebuild \
+  /p:Configuration="$CONFIGURATION" \
+  "$ROOT_DIR/FNA/FNA.csproj"
+
+echo "[5/6] Rebuilding DuckGame ($CONFIGURATION) with Mono"
+xbuild \
+  /t:Rebuild \
   /p:Configuration="$CONFIGURATION" \
   /p:SolutionDir="$ROOT_DIR/" \
   "$ROOT_DIR/DuckGame/DuckGame.csproj"
 
-echo "[4/4] Copying runtime files"
+echo "[6/6] Copying runtime files"
 mkdir -p "$ROOT_DIR/bin"
-cp -f "$ROOT_DIR"/DuckGame/lib/* "$ROOT_DIR/bin/"
+cp -n "$ROOT_DIR"/DuckGame/lib/* "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/FAudio/build/libFAudio.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/FNA3D/build/libFNA3D.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/Theorafile/libtheorafile.dylib" "$ROOT_DIR/bin/"
