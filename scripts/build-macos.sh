@@ -135,7 +135,15 @@ xbuild \
 
 echo "[6/6] Copying runtime files"
 mkdir -p "$ROOT_DIR/bin"
-cp -n "$ROOT_DIR"/DuckGame/lib/* "$ROOT_DIR/bin/"
+for lib_file in "$ROOT_DIR"/DuckGame/lib/*; do
+  lib_name="$(basename "$lib_file")"
+  if [[ "$lib_name" == "FNA.dll" || "$lib_name" == "DGSteam.dll" ]]; then
+    continue
+  fi
+  cp -f "$lib_file" "$ROOT_DIR/bin/"
+done
+cp -f "$ROOT_DIR/FNA/obj/x86/$CONFIGURATION/FNA.dll" "$ROOT_DIR/bin/FNA.dll"
+cp -f "$ROOT_DIR/Steam/obj/x86/$CONFIGURATION/DGSteam.dll" "$ROOT_DIR/bin/DGSteam.dll"
 cp -f "$ROOT_DIR/FNA/lib/FAudio/build/libFAudio.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/FNA3D/build/libFNA3D.0.dylib" "$ROOT_DIR/bin/"
 cp -f "$ROOT_DIR/FNA/lib/Theorafile/libtheorafile.dylib" "$ROOT_DIR/bin/"
