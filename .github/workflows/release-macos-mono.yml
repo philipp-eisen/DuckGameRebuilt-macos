@@ -3,6 +3,9 @@ name: Release macOS DMG
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - feat/amd64-build
   workflow_dispatch:
     inputs:
       skip_notarize:
@@ -21,11 +24,13 @@ jobs:
         include:
           - arch: arm64
             runner: macos-15
+          - arch: x64
+            runner: macos-13
 
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     env:
-      SKIP_NOTARIZE: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_notarize || 'false' }}
+      SKIP_NOTARIZE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.skip_notarize) || 'false' }}
 
     steps:
       - name: Checkout code
