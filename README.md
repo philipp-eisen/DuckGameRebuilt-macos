@@ -14,6 +14,8 @@ For **Windows** users, subscribe to [the steam workshop mod](https://steamcommun
 
 For **Linux** users, follow the [Linux Installation Guide](https://github.com/TheFlyingFoool/DuckGameRebuilt/wiki/Linux-Installation-Guide)
 
+For **macOS** users, download the DMG from the [latest release](https://github.com/philipp-eisen/DuckGameRebuilt-macos/releases/latest) and copy the game to your Applications folder.
+
 ## For Developers 🚧
 Welcome to the repo, enjoy your stay, please unfuck the code. thanks
 
