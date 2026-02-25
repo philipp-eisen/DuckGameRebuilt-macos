@@ -271,6 +271,13 @@ namespace Microsoft.Xna.Framework
 			}
 
 
+			// Use HIDAPI driver for controllers to bypass macOS
+			// GameController framework and reduce Bluetooth input latency
+			SDL.SDL_SetHint(
+				SDL.SDL_HINT_JOYSTICK_HIDAPI,
+				"1"
+			);
+
 			// Set any hints to match XNA4 behavior...
 			string hint = SDL.SDL_GetHint(SDL.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
 			if (String.IsNullOrEmpty(hint))
