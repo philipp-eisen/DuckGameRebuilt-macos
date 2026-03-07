@@ -1,4 +1,4 @@
-# <img src="https://github.com/user-attachments/assets/1a6306e6-0fbb-4c3f-b1bd-1a96070efdd3" height="32"> Duck Game Rebuilt (macOS Fork)
+# <img src="icon.png" height="32"> Duck Game Rebuilt (macOS Fork)
 
 This is a fork of [Duck Game Rebuilt](https://github.com/TheFlyingFoool/DuckGameRebuilt) that adds macOS compatibility, including build scripts, app bundling, code signing, notarization, and CI for both Apple Silicon (arm64) and Intel (x64).
 

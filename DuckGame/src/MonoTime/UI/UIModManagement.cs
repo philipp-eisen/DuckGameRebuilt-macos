@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
+using Microsoft.Xna.Framework;
 
 namespace DuckGame
 {
@@ -40,8 +41,21 @@ namespace DuckGame
 			_editModMenu.Close();
 			Open();
         }
+        void OpenFolder()
+        {
+            if (_selectedMod == null || _selectedMod.configuration == null) return;
 
-		private const int FO_DELETE = 0x0003;
+            string full = Path.GetFullPath(_selectedMod.configuration.directory);
+
+            if (!full.EndsWith(Path.DirectorySeparatorChar.ToString()) &&
+                !full.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+            {
+                full += Path.DirectorySeparatorChar;
+            }
+            FNAPlatform.OpenURL(new Uri(full).AbsoluteUri);
+
+        }
+        private const int FO_DELETE = 0x0003;
 		private const int FOF_ALLOWUNDO = 0x0040;           // Preserve undo information, if possible. 
 		private const int FOF_NOCONFIRMATION = 0x0010;      // Show no confirmation dialog box to the user
 
@@ -164,7 +178,7 @@ namespace DuckGame
 			_editModMenu.Close();
 			Open();
 			
-			Steam.OverlayOpenURL("http://steamcommunity.com/sharedfiles/filedetails/?id=" + _selectedMod.configuration.workshopID);
+			Steam.OverlayOpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" + _selectedMod.configuration.workshopID);
 		}
 
 		static void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
@@ -320,6 +334,11 @@ namespace DuckGame
 			_deleteOrUnsubItem = new UIMenuItem("DELETE", new UIMenuActionCallFunction(DeleteMod));
 			_uploadItem = new UIMenuItem("UPLOAD", new UIMenuActionCallFunction(UploadMod));
 			_visitItem = new UIMenuItem("VISIT PAGE", new UIMenuActionCallFunction(VisitModPage));
+            if (Program.IS_DEV_BUILD || Debugger.IsAttached)
+            {
+                _editModMenu.Add(new UIText(" ", Color.White));
+                _editModMenu.Add(new UIMenuItem("OPEN FOLDER", new UIMenuActionCallFunction(OpenFolder)));
+            }
 			_editModMenu.Add(new UIText(" ", Color.White));
 			_editModMenu.Add(new UIMenuItem("BACK", new UIMenuActionOpenMenu(_editModMenu, this)));
 			_editModMenu.Close();
@@ -497,7 +516,7 @@ namespace DuckGame
 					{
 						if (_transferItem.finishedProcessing)
 						{
-							Steam.OverlayOpenURL("http://steamcommunity.com/sharedfiles/filedetails/?id=" + _transferItem.id);
+							Steam.OverlayOpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" + _transferItem.id);
 
 							// delete workshop temp folder
 							string folderPath = DuckFile.workshopDirectory + _transferItem.id + "/";
@@ -716,7 +735,7 @@ namespace DuckGame
                             }
 						}
 						else
-							Steam.OverlayOpenURL("http://steamcommunity.com/workshop/browse/?appid=312530&searchtext=&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Mod");
+							Steam.OverlayOpenURL("https://steamcommunity.com/workshop/browse/?appid=312530&searchtext=&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Mod");
 					}
 				}
 				else

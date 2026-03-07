@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security;
+using System.Windows.Media;
 using System.Xml.Serialization;
 using XnaToFna.ProxyForms;
 //using XnaToFna.XEX;
@@ -25,15 +26,16 @@ namespace XnaToFna
         public static MethodInfo m_XnaToFnaHelper_PreUpdate = typeof(XnaToFnaHelper).GetMethod("PreUpdate");
         public static MethodInfo m_XnaToFnaHelper_MainHook = typeof(XnaToFnaHelper).GetMethod("MainHook");
         public static MethodInfo m_FileSystemHelper_FixPath = typeof(FileSystemHelper).GetMethod("FixPath");
-        public static readonly byte[] DotNetFrameworkKeyToken = new byte[8] {
-           183,
-           122,
-           92,
-           86,
-           25,
-           52,
-           224,
-           137
+        public static readonly byte[] DotNetFrameworkKeyToken = new byte[8]
+        {
+            183,
+            122,
+            92,
+            86,
+            25,
+            52,
+            224,
+            137
         };
         public static readonly Version DotNetFramework4Version = new Version(4, 0, 0, 0);
         public static readonly Version DotNetFramework2Version = new Version(2, 0, 0, 0);
@@ -68,7 +70,7 @@ namespace XnaToFna
         public List<string> FixPathsFor;
         public ILPlatform PreferredPlatform;
         public static Assembly Aassembly;
-        public static int RemapVersion = 22;
+        public static int RemapVersion = 27;
         public void Stub(ModuleDefinition mod)
         {
             Log(string.Format("[Stub] Stubbing {0}", mod.Assembly.Name.Name));
@@ -140,8 +142,8 @@ namespace XnaToFna
             Modder.RelinkMap["System.Void Microsoft.Xna.Framework.GraphicsDeviceManager::ApplyChanges()"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.Void ApplyChanges(Microsoft.Xna.Framework.GraphicsDeviceManager)");
             foreach (Type type in typeof(Form).Assembly.SaferGetTypes())
             {
-                 //else if (fullName.StartsWith("XnaToFna.ProxyDrawing."))
-                 //   this.Modder.RelinkMap["System.Drawing." + fullName.Substring(22)] = fullName;
+                //else if (fullName.StartsWith("XnaToFna.ProxyDrawing."))
+                //   this.Modder.RelinkMap["System.Drawing." + fullName.Substring(22)] = fullName;
                 string fullName = type.FullName;
                 //if (fullName.StartsWith("XnaToFna.ProxyForms."))
                 //    this.Modder.RelinkMap["System.Windows.Forms." + fullName.Substring(20)] = fullName;
@@ -173,6 +175,9 @@ namespace XnaToFna
             Modder.RelinkMap["System.Boolean System.IO.Directory::Exists(System.String)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.Boolean DirectoryExists(System.String)");
             Modder.RelinkMap["System.String[] System.IO.Directory::GetFiles(System.String)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.String[] DirectoryGetFiles(System.String)");
             Modder.RelinkMap["System.Void System.IO.Directory::Delete(System.String)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.Void DirectoryDelete(System.String)");
+            Modder.RelinkMap["System.String System.IO.Directory::GetCurrentDirectory()"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.String GetCurrentDirectory()");
+            Modder.RelinkMap["System.String[] System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.String[] GetFiles(System.String,System.String,System.IO.SearchOption)");
+
 
             Modder.RelinkMap["System.Void System.IO.File::SetAttributes(System.String,System.IO.FileAttributes)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.Void FileSetAttributes(System.String,System.IO.FileAttributes)");
             Modder.RelinkMap["System.String System.IO.File::ReadAllText(System.String,System.Text.Encoding)"] = new RelinkMapEntry("XnaToFna.XnaToFnaHelper", "System.Void FileReadAllText(System.String,System.Text.Encoding)");
@@ -207,6 +212,11 @@ namespace XnaToFna
             Modder.TranspilerMap["System.TimeSpan DuckGame.ExtraStuff.EMusic::get_position()"] = new TranspilerMapEntry(TryCatchPatch);
 
 
+
+            //Balloon Net Gun & Mind Swap Grenade 1971284863 Null Exception 
+            Modder.TranspilerMap["System.Void DuckGame.FunGun.NetBalloon::Update()"] = new TranspilerMapEntry(TryCatchPatch);
+            Modder.TranspilerMap["System.Void DuckGame.FunGun.NetBalloon::Draw()"] = new TranspilerMapEntry(TryCatchPatch);
+
             //Johns Weapon 1268274761
             // Some kinda linux related crash something to do with System.UnauthorizedAccessException: Access to the path probly something wrong with doing
             //public static string logPath = "C:\\Users\\" + Environment.UserName + "\\Documents\\DuckGame\\DuckDebug\\"; for pathing
@@ -215,7 +225,16 @@ namespace XnaToFna
             Modder.TranspilerMap["System.Void DuckGame.DuckDebug.DuckDebug::clearLog()"] = new TranspilerMapEntry(TryCatchPatch);
 
 
+
+            //DWEP [945664816]   SpecialDrawer::Update System.NullReferenceException: Special Code: draw5 
+            Modder.TranspilerMap["System.Void DuckGame.DWEP.SpecialDrawer::Update()"] = new TranspilerMapEntry(TryCatchPatch);
+
+
+            //Gatling Guns [2395356716]   Phasaber.OnPressAction
+            Modder.TranspilerMap["System.Void DuckGame.GatlingGuns.Phasaber::OnPressAction()"] = new TranspilerMapEntry(TryCatchPatch);
+
             Modder.TranspilerMap["System.Void DuckGame.C44P.C4::Update()"] = new TranspilerMapEntry(typeof(XnaToFnaUtil).GetMethod("C4PP_C4_Update", BindingFlags.NonPublic | BindingFlags.Static));
+
             Modder.TranspilerMap["System.Void DuckGame.JamMod.Banjoo::OnPressAction()"] = new TranspilerMapEntry(typeof(XnaToFnaUtil).GetMethod("JamMod_Banjoo_OnPressAction", BindingFlags.NonPublic | BindingFlags.Static));
             Modder.TranspilerMap["System.Void DuckGame.JamMod.Schnitzel::OnPressAction()"] = new TranspilerMapEntry(TryCatchPatch);
 
@@ -245,6 +264,49 @@ namespace XnaToFna
                     mapping.Setup(this, mapping);
             }
         }
+        public static void SetupHarmonyRelinkMap(XnaToFnaUtil xtf, XnaToFnaMapping mapping)
+        {
+            TypeDefinition harmonyInstance =  mapping.Module.Types.FirstOrDefault(t => t.FullName == "Harmony.HarmonyInstance");
+
+            if (harmonyInstance != null)
+            {
+                xtf.Modder.RelinkMap["HarmonyLib.Harmony"] = harmonyInstance;
+            }
+            Dictionary<string, string> knownRelocations = new Dictionary<string, string>()
+            {
+                { "ByteBuffer", "Harmony.ILCopying" },
+                { "Emitter", "Harmony.ILCopying" },
+                { "ExceptionBlock", "Harmony.ILCopying" },
+                { "ExceptionBlockType", "Harmony.ILCopying" },
+                { "ILInstruction", "Harmony.ILCopying" },
+                { "LeaveTry", "Harmony.ILCopying" },
+                { "Memory", "Harmony.ILCopying" },
+                { "MethodBodyReader", "Harmony.ILCopying" },
+                { "MethodCopier", "Harmony.ILCopying" },
+    
+                { "SelfPatching", "Harmony.Tools" }
+            };
+
+            SetupDirectRelinkMap(xtf, mapping, (_, type) =>
+            {
+                if (!type.Namespace.StartsWith("Harmony"))
+                    return;
+
+                string shortTypeName = type.Name;
+
+                if (shortTypeName == "HarmonyInstance")
+                    return;
+
+                string oldNamespace = knownRelocations.TryGetValue(shortTypeName, out string relocatedNs)
+                    ? $"HarmonyLib.{relocatedNs.Split('.').Last()}" 
+                    : "HarmonyLib";
+
+                string fullOldTypeName = $"{oldNamespace}.{shortTypeName}";
+                xtf.Modder.RelinkMap[fullOldTypeName] = type;
+
+                xtf.Modder.RelinkMap[$"HarmonyLib.{shortTypeName}"] = type;
+            });
+        }
 
         public static void SetupGSRelinkMap(XnaToFnaUtil xtf, XnaToFnaMapping mapping) => SetupDirectRelinkMap(xtf, mapping, (_, type) =>
         {
@@ -264,18 +326,18 @@ namespace XnaToFna
         public static void SetupDirectRelinkMap(XnaToFnaUtil xtf, XnaToFnaMapping mapping) => SetupDirectRelinkMap(xtf, mapping, null);
 
         public static void SetupDirectRelinkMap(
-          XnaToFnaUtil xtf,
-          XnaToFnaMapping mapping,
-          Action<XnaToFnaUtil, TypeDefinition> action)
+            XnaToFnaUtil xtf,
+            XnaToFnaMapping mapping,
+            Action<XnaToFnaUtil, TypeDefinition> action)
         {
             foreach (TypeDefinition type in mapping.Module.Types)
                 SetupDirectRelinkMapType(xtf, type, action);
         }
 
         public static void SetupDirectRelinkMapType(
-          XnaToFnaUtil xtf,
-          TypeDefinition type,
-          Action<XnaToFnaUtil, TypeDefinition> action)
+            XnaToFnaUtil xtf,
+            TypeDefinition type,
+            Action<XnaToFnaUtil, TypeDefinition> action)
         {
             if (action != null)
                 action(xtf, type);
@@ -307,7 +369,8 @@ namespace XnaToFna
                 for (TypeDefinition typeDefinition = type.BaseType?.Resolve(); typeDefinition != null; typeDefinition = typeDefinition.BaseType?.Resolve())
                     source.Push(typeDefinition);
             }
-            catch { }
+            catch
+            { }
             foreach (FieldDefinition field in type.Fields)
             {
                 string name = field.Name;
@@ -322,67 +385,154 @@ namespace XnaToFna
                 PreProcessType(nestedType);
         }
 
-    private static void AddTryCatchPatch(MethodDefinition m)
-    {
-        if (m.Body.ExceptionHandlers.Count != 0)  // check into if this a good idea to do?
-        { 
-            return;
-        }
-        var body = m.Body;
-        body.InitLocals = true;
-        var il = body.GetILProcessor();
+        //private static void AddTryCatchPatch(MethodDefinition m)
+        //{
+        //    if (m.Body.ExceptionHandlers.Count != 0)  // check into if this a good idea to do?
+        //    { 
+        //        return;
+        //    }
+        //    var body = m.Body;
+        //    body.InitLocals = true;
+        //    var il = body.GetILProcessor();
 
-        /* ─── locals ────────────────────────────────────────────── */
-        var excType = m.Module.ImportReference(typeof(Exception)); // Exception ex
-        var exVar = new VariableDefinition(excType);
-        body.Variables.Add(exVar);
+        //    /* ─── locals ────────────────────────────────────────────── */
+        //    var excType = m.Module.ImportReference(typeof(Exception)); // Exception ex
+        //    var exVar = new VariableDefinition(excType);
+        //    body.Variables.Add(exVar);
 
-        VariableDefinition retVar = null;
-        bool hasReturn = m.ReturnType.MetadataType != MetadataType.Void;
-        if (hasReturn)
+        //    VariableDefinition retVar = null;
+        //    bool hasReturn = m.ReturnType.MetadataType != MetadataType.Void;
+        //    if (hasReturn)
+        //    {
+        //        retVar = new VariableDefinition(m.ReturnType);
+        //        body.Variables.Add(retVar);
+        //    }
+
+        //    /* ─── labels / scaffolding ──────────────────────────────── */
+        //    var epilogue = il.Create(OpCodes.Nop);          // unified return point
+        //    var fallThroughLeave = il.Create(OpCodes.Leave, epilogue);
+        //    il.Append(fallThroughLeave);                    // end-of-try sentinel
+
+        //    /* ─── rewrite existing “ret” instructions ───────────────── */
+        //    foreach (var ret in body.Instructions.Where(i => i.OpCode == OpCodes.Ret).ToList())
+        //    {
+        //        if (hasReturn)
+        //            il.InsertBefore(ret, il.Create(OpCodes.Stloc, retVar));
+
+        //        ret.OpCode = OpCodes.Leave;
+        //        ret.Operand = epilogue;
+        //    }
+
+        //    /* ─── catch block (store ex, ignore, continue) ──────────── */
+        //    var catchStart = il.Create(OpCodes.Stloc, exVar);    // catch(Exception ex)
+        //    il.Append(catchStart);
+        //    var catchEnd = il.Create(OpCodes.Leave, epilogue); // swallow & continue
+        //    il.Append(catchEnd);
+
+        //    /* ─── common epilogue ───────────────────────────────────── */
+        //    il.Append(epilogue);
+        //    if (hasReturn) il.Append(il.Create(OpCodes.Ldloc, retVar)); // default(T)
+        //    il.Append(il.Create(OpCodes.Ret));
+
+        //    /* ─── EH table entry ────────────────────────────────────── */
+        //    body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+        //    {
+        //        CatchType = excType,
+        //        TryStart = body.Instructions.First(),
+        //        TryEnd = catchStart,   // first instr *after* try
+        //        HandlerStart = catchStart,
+        //        HandlerEnd = epilogue      // first instr *after* catch
+        //    });
+        //}
+
+
+        // Patch: Add top-level try/catch(Exception) to a method, regardless of existing handlers
+        private static void AddTryCatchPatch(MethodDefinition method)
         {
-            retVar = new VariableDefinition(m.ReturnType);
-            body.Variables.Add(retVar);
-        }
+            if (!method.HasBody)
+                return;
 
-        /* ─── labels / scaffolding ──────────────────────────────── */
-        var epilogue = il.Create(OpCodes.Nop);          // unified return point
-        var fallThroughLeave = il.Create(OpCodes.Leave, epilogue);
-        il.Append(fallThroughLeave);                    // end-of-try sentinel
+            var body = method.Body;
+            var il = body.GetILProcessor();
+            body.InitLocals = true;
 
-        /* ─── rewrite existing “ret” instructions ───────────────── */
-        foreach (var ret in body.Instructions.Where(i => i.OpCode == OpCodes.Ret).ToList())
-        {
+            // (1) Create a new variable to hold Exception ex
+            var excType = method.Module.ImportReference(typeof(Exception));
+            var exVar = new VariableDefinition(excType);
+            body.Variables.Add(exVar);
+
+            // (2) (If needed) Create a variable to store the return value
+            VariableDefinition retVar = null;
+            bool hasReturn = method.ReturnType.MetadataType != MetadataType.Void;
             if (hasReturn)
-                il.InsertBefore(ret, il.Create(OpCodes.Stloc, retVar));
+            {
+                retVar = new VariableDefinition(method.ReturnType);
+                body.Variables.Add(retVar);
+            }
 
-            ret.OpCode = OpCodes.Leave;
-            ret.Operand = epilogue;
+            // (3) Add a new NOP as a unified epilogue (method exit)
+            var epilogue = il.Create(OpCodes.Nop);
+            il.Append(epilogue);
+
+            // (4) Rewrite all ret instructions to go to the epilogue, storing the return value if needed
+            var originalRets = body.Instructions.Where(i => i.OpCode == OpCodes.Ret).ToList();
+            foreach (var ret in originalRets)
+            {
+                if (hasReturn)
+                    il.InsertBefore(ret, il.Create(OpCodes.Stloc, retVar));
+                ret.OpCode = OpCodes.Leave;
+                ret.Operand = epilogue;
+            }
+
+            // (5) Add handlers for your catch block
+            var catchStart = il.Create(OpCodes.Stloc, exVar);
+            il.Append(catchStart);
+
+            // (Optional) Insert your error handling/logging here, e.g. call a logger method or just swallow
+            // il.Append(il.Create(OpCodes.Call, logExceptionMethod)); // if you have one
+
+            var catchLeave = il.Create(OpCodes.Leave, epilogue);
+            il.Append(catchLeave);
+
+            // (6) Add the top-level ExceptionHandler (which covers all instructions up to the catch)
+            var allInstructions = body.Instructions.ToList();
+            var tryStart = allInstructions.First();
+            var tryEnd = catchStart;
+            var handlerStart = catchStart;
+            var handlerEnd = epilogue;
+
+            var topHandler = new ExceptionHandler(ExceptionHandlerType.Catch)
+            {
+                CatchType = excType,
+                TryStart = tryStart,
+                TryEnd = tryEnd,
+                HandlerStart = handlerStart,
+                HandlerEnd = handlerEnd
+            };
+            body.ExceptionHandlers.Add(topHandler);
+
+            // (7) Patch up all existing ExceptionHandlers if needed, 
+            // so that HandlerEnd/TryEnd that pointed to "the end" now point to the new epilogue
+            foreach (var eh in body.ExceptionHandlers.ToArray())
+            {
+                if (eh != topHandler)
+                {
+                    if (eh.TryEnd == null || eh.TryEnd == allInstructions.Last() || eh.TryEnd == null)
+                        eh.TryEnd = catchStart; // Try block must end at catch start
+                    if (eh.HandlerEnd == null || eh.HandlerEnd == allInstructions.Last() || eh.HandlerEnd == null)
+                        eh.HandlerEnd = epilogue;
+                }
+            }
+
+            // (8) At the epilogue, load return value if necessary, then return
+            il.Append(epilogue);
+            if (hasReturn)
+                il.Append(il.Create(OpCodes.Ldloc, retVar));
+            il.Append(il.Create(OpCodes.Ret));
+
         }
 
-        /* ─── catch block (store ex, ignore, continue) ──────────── */
-        var catchStart = il.Create(OpCodes.Stloc, exVar);    // catch(Exception ex)
-        il.Append(catchStart);
-        var catchEnd = il.Create(OpCodes.Leave, epilogue); // swallow & continue
-        il.Append(catchEnd);
-
-        /* ─── common epilogue ───────────────────────────────────── */
-        il.Append(epilogue);
-        if (hasReturn) il.Append(il.Create(OpCodes.Ldloc, retVar)); // default(T)
-        il.Append(il.Create(OpCodes.Ret));
-
-        /* ─── EH table entry ────────────────────────────────────── */
-        body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
-        {
-            CatchType = excType,
-            TryStart = body.Instructions.First(),
-            TryEnd = catchStart,   // first instr *after* try
-            HandlerStart = catchStart,
-            HandlerEnd = epilogue      // first instr *after* catch
-        });
-    }
-
-        private static List<Instruction> C4PP_C4_Update(List<Instruction> instructions) 
+        private static List<Instruction> C4PP_C4_Update(List<Instruction> instructions)
         {
             List<Instruction> new_instructions = new List<Instruction>();
             object JumpLocation = null;
@@ -428,7 +578,7 @@ namespace XnaToFna
                 if (!Packed)
                 {
                     if (instruction.OpCode == OpCodes.Stfld &&
-                        instruction.Operand != null && instruction.Operand.ToString() == "DuckGame.Duck DuckGame.JamMod.Banjoo::duc") 
+                        instruction.Operand != null && instruction.Operand.ToString() == "DuckGame.Duck DuckGame.JamMod.Banjoo::duc")
                     {
                         Packed = true;
                         new_instructions.Add(instruction);
@@ -445,7 +595,7 @@ namespace XnaToFna
             return new_instructions;
 
         }
-       
+
         public void PostProcessType(TypeDefinition type)
         {
             bool flag = false;
@@ -608,8 +758,8 @@ namespace XnaToFna
                 ilProcessor.InsertBefore(instructions[instri], ilProcessor.Create(OpCodes.Call, new GenericInstanceMethod(method1)
                 {
                     GenericArguments = {
-            operand.Parameters[index].ParameterType
-          }
+                        operand.Parameters[index].ParameterType
+                    }
                 }));
                 ++instri;
             }
@@ -618,8 +768,8 @@ namespace XnaToFna
                 ilProcessor.InsertBefore(instructions[instri], ilProcessor.Create(OpCodes.Call, new GenericInstanceMethod(method2)
                 {
                     GenericArguments = {
-            operand.Parameters[index].ParameterType
-          }
+                        operand.Parameters[index].ParameterType
+                    }
                 }));
                 ++instri;
             }
@@ -635,47 +785,60 @@ namespace XnaToFna
 
         public XnaToFnaUtil()
         {
-            Mappings = new List<XnaToFnaMapping>() {
-            new XnaToFnaMapping("System", new string[1] {
-                "System.Net"
-          }),
-          new XnaToFnaMapping("FNA", new string[9] {
-            "Microsoft.Xna.Framework",
-            "Microsoft.Xna.Framework.Avatar",
-            "Microsoft.Xna.Framework.Content.Pipeline",
-            "Microsoft.Xna.Framework.Game",
-            "Microsoft.Xna.Framework.Graphics",
-            "Microsoft.Xna.Framework.Input.Touch",
-            "Microsoft.Xna.Framework.Storage",
-            "Microsoft.Xna.Framework.Video",
-            "Microsoft.Xna.Framework.Xact"
-          }),
-          new XnaToFnaMapping("MonoGame.Framework.Net", new string[3] {
-            "Microsoft.Xna.Framework.GamerServices",
-            "Microsoft.Xna.Framework.Net",
-            "Microsoft.Xna.Framework.Xdk"
-          }, new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap)),
-          new XnaToFnaMapping("FNA.Steamworks", new string[4] {
-            "FNA.Steamworks",
-            "Microsoft.Xna.Framework.GamerServices",
-            "Microsoft.Xna.Framework.Net",
-            "Microsoft.Xna.Framework.Xdk"
-          }, new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap)),
-          new XnaToFnaMapping("Steam", new string[2] {
-            "Steam",
-            "DGSteam"
+            Mappings = new List<XnaToFnaMapping>
+            {
+                new XnaToFnaMapping("System", new string[1]
+                {
+                        "System.Net"
+                }),
+                new XnaToFnaMapping("FNA", new string[10]
+                {
+                    "WineMono.FNA", // Added for a random mod crash seems to fix it
+                    "Microsoft.Xna.Framework",
+                    "Microsoft.Xna.Framework.Avatar",
+                    "Microsoft.Xna.Framework.Content.Pipeline",
+                    "Microsoft.Xna.Framework.Game",
+                    "Microsoft.Xna.Framework.Graphics",
+                    "Microsoft.Xna.Framework.Input.Touch",
+                    "Microsoft.Xna.Framework.Storage",
+                    "Microsoft.Xna.Framework.Video",
+                    "Microsoft.Xna.Framework.Xact"
+                }),
+                new XnaToFnaMapping("MonoGame.Framework.Net", new string[3]
+                {
+                    "Microsoft.Xna.Framework.GamerServices",
+                    "Microsoft.Xna.Framework.Net",
+                    "Microsoft.Xna.Framework.Xdk"
+                },
+                new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap)),
+                new XnaToFnaMapping("FNA.Steamworks", new string[4]
+                    {
+                        "FNA.Steamworks",
+                        "Microsoft.Xna.Framework.GamerServices",
+                        "Microsoft.Xna.Framework.Net",
+                        "Microsoft.Xna.Framework.Xdk"
+                    },
+               new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap)),
+                new XnaToFnaMapping("Steam", new string[2]
+                    {
+                        "Steam",
+                        "DGSteam"
 
-          }, new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap2))
-      };
+                }, new XnaToFnaMapping.SetupDelegate(SetupGSRelinkMap2)),
+                new XnaToFnaMapping("HarmonyLoader", new[] { "0Harmony" },
+                new XnaToFnaMapping.SetupDelegate(SetupHarmonyRelinkMap))
+            };
+
             AssemblyResolver = new CustomAssemblyResolver();
             Directories = new List<string>();
-            ContentDirectoryNames = new List<string>() {
+            ContentDirectoryNames = new List<string>()
+            {
                 "Content"
             };
             ContentDirectories = new List<string>();
             Modules = new List<ModuleDefinition>();
             ModulePaths = new Dictionary<ModuleDefinition, string>();
-            RemoveDeps = new HashSet<string>() 
+            RemoveDeps = new HashSet<string>()
             {
                 null,
                 "",
@@ -694,6 +857,7 @@ namespace XnaToFna
             HookReflection = true;
             DestroyPublicKeyTokens = new List<string>();
             FixPathsFor = new List<string>();
+            DestroyPublicKeyTokens.Add("0Harmony");
             PreferredPlatform = ILPlatform.AnyCPU;
             Modder = new XnaToFnaModder(this);
             string path = Program.FilePath;
@@ -720,7 +884,7 @@ namespace XnaToFna
         public XnaToFnaUtil(string path) : this()
         {
             CustomAssemblyResolver.searchdirectorpath = path;
-           // this.ScanPaths(path);
+            // this.ScanPaths(path);
         }
         public void Log(string txt)
         {
@@ -729,10 +893,10 @@ namespace XnaToFna
         }
 
         public ModuleDefinition MissingDependencyResolver(
-          MonoModder modder,
-          ModuleDefinition main,
-          string name,
-          string fullName)
+            MonoModder modder,
+            ModuleDefinition main,
+            string name,
+            string fullName)
         {
             Modder.Log(string.Format("Cannot map dependency {0} -> (({1}), ({2})) - not found", main.Name, fullName, name));
             return null;
@@ -850,8 +1014,8 @@ namespace XnaToFna
                 if (!File.Exists(path + ".mdb") && !File.Exists(Path.ChangeExtension(path, "pdb")))
                     rp.ReadSymbols = false;
                 Log(string.Format("[ScanPath] Checking assembly {0} ({1})", name.Name, rp.ReadWrite ?
-                  "rw" : (object)
-                  "r-"));
+                    "rw" : (object)
+                    "r-"));
                 ModuleDefinition key;
                 try
                 {
@@ -861,6 +1025,12 @@ namespace XnaToFna
                 {
                     Log(string.Format("[ScanPath] WARNING: Cannot load assembly: {0}", ex));
                     return;
+                }
+                if (key.Assembly.Name.Name == "HarmonyLoader")
+                {
+                    Log("[ScanPath] Registering HarmonyLoader in DependencyCache");
+                    Modder.DependencyCache["HarmonyLoader"] = key;
+                    Modder.DependencyCache[key.Assembly.Name.FullName] = key;
                 }
                 bool flag = !rp.ReadWrite || name.Name == ThisAssemblyName;
                 if ((key.Attributes & ModuleAttributes.ILOnly) != ModuleAttributes.ILOnly)
@@ -1218,7 +1388,7 @@ namespace XnaToFna
             using (MemoryStream memStream = new MemoryStream())
             {
                 FieldInfo ImageField = typeof(ModuleDefinition).GetField("Image", BindingFlags.NonPublic | BindingFlags.Instance);
-                Modder.Module.Write(memStream, Modder.WriterParameters, Modder.Module.Image.Stream.value.GetFileName());//this.Modder.Module.Image.Stream.value.GetFileName()
+                Modder.Module.Write(memStream, Modder.WriterParameters, Modder.Module.Image.Stream.value.GetFileName()); //this.Modder.Module.Image.Stream.value.GetFileName()
                 //mod.Assembly.MainModule.Name
                 assemblybytes = memStream.ToArray();
             }
@@ -1265,7 +1435,7 @@ namespace XnaToFna
             using (FileStream fs = File.Create(path))
             {
                 //FieldInfo ImageField = typeof(ModuleDefinition).GetField("Image", BindingFlags.NonPublic | BindingFlags.Instance);
-                Modder.Module.Write(fs, Modder.WriterParameters);//this.Modder.Module.Image.Stream.value.GetFileName()
+                Modder.Module.Write(fs, Modder.WriterParameters); //this.Modder.Module.Image.Stream.value.GetFileName()
                 //mod.Assembly.MainModule.Name
                 //assemblybytes = memStream.ToArray();
             }
@@ -1291,13 +1461,15 @@ namespace XnaToFna
         //}
         private sealed class fuller
         {
-            public fuller() { }
+            public fuller()
+            { }
 
             public ModuleDefinition dep;
         }
         private sealed class filler2
         {
-            public filler2() { }
+            public filler2()
+            { }
 
             internal bool OrderModules(ModuleDefinition other)
             {
@@ -1311,7 +1483,8 @@ namespace XnaToFna
         }
         private sealed class thing
         {
-            public thing() { }
+            public thing()
+            { }
 
             internal Assembly TypeResolve(object sender, ResolveEventArgs args)
             {
@@ -1337,7 +1510,8 @@ namespace XnaToFna
         }
         private sealed class ugh
         {
-            public ugh() { }
+            public ugh()
+            { }
 
             internal bool ifnamenot(XnaToFnaMapping mappings)
             {
