@@ -244,8 +244,6 @@ namespace DGWindows
         [HandleProcessCorruptedStateExceptions, SecurityCritical]
         public static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
         {
-            if (!File.Exists("CrashWindow.exe"))
-                return;
             try
             {
                 Program.HandleGameCrash(e.ExceptionObject as Exception);
@@ -253,8 +251,7 @@ namespace DGWindows
             catch (Exception ex)
             {
                 string pLogMessage = ProcessErrorLine(e.ExceptionObject.ToString(), e.ExceptionObject as Exception);
-                Program.AppendDuckLog(pLogMessage);
-                Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + (e.ExceptionObject as Exception).Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + GetCrashWindowString(ex, null, pLogMessage));
+                Program.TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -modName none -source " + (e.ExceptionObject as Exception).Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + GetCrashWindowString(ex, null, pLogMessage), pLogMessage + "\n" + Program.ProcessExceptionString(ex));
             }
         }
 

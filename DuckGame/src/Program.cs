@@ -281,6 +281,38 @@ namespace DuckGame
             }
         }
 
+        public static bool TryStartCrashWindow(string args, string fallbackLogMessage = null)
+        {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT && File.Exists("CrashWindow.exe"))
+            {
+                try
+                {
+                    Process.Start("CrashWindow.exe", args);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    fallbackLogMessage = string.IsNullOrEmpty(fallbackLogMessage)
+                        ? "Opening CrashWindow failed with error: " + ex
+                        : fallbackLogMessage + "\nOpening CrashWindow failed with error: " + ex;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(fallbackLogMessage))
+            {
+                AppendDuckLog(fallbackLogMessage);
+                try
+                {
+                    Console.Error.WriteLine(fallbackLogMessage);
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
+        }
+
         public static Assembly Resolve(object sender, ResolveEventArgs args)
         {
             if (!enteredMain)
@@ -312,8 +344,7 @@ namespace DuckGame
                     string str = "Failed to resolve assembly:\n" + args.Name + "\n";
                     if (args.Name.Contains("Microsoft.Xna.Framework"))
                         str += "(You may need to install the XNA redistributables!)\n";
-                    AppendDuckLog(str);
-                    Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"");
+                    TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -exceptionString \"" + str.Replace("\n", "|NEWLINE|").Replace("\r", "|NEWLINE2|") + "\" -source Duck Game -commandLine \"\" -executable \"" + Application.ExecutablePath + "\"", str);
                 }
             }
             return null;
@@ -861,8 +892,7 @@ namespace DuckGame
             catch (Exception ex)
             {
                 string pLogMessage = WindowsPlatformStartup.ProcessErrorLine(e.Exception.ToString(), e.Exception);
-                AppendDuckLog(pLogMessage);
-                Process.Start("CrashWindow.exe", "-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage));
+                TryStartCrashWindow("-modResponsible 0 -modDisabled 0 -modName none -source " + e.Exception.Source + " -commandLine \"none\" -executable \"" + Application.ExecutablePath + "\" " + WindowsPlatformStartup.GetCrashWindowString(ex, null, pLogMessage), pLogMessage + "\n" + ProcessExceptionString(ex));
             }
         }
         public static string ProcessExceptionString(Exception e)
@@ -1124,7 +1154,7 @@ namespace DuckGame
                 }
                 catch (Exception) { }
                 num = 6;
-                if (File.Exists("CrashWindow.exe"))
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT && File.Exists("CrashWindow.exe"))
                 {
                     try
                     {
@@ -1138,6 +1168,17 @@ namespace DuckGame
                     catch (Exception ex)
                     {
                         WriteToLog("Opening CrashWindow failed with error: " + ex.ToString() + "\n");
+                    }
+                }
+                else
+                {
+                    WriteToLog(str1);
+                    try
+                    {
+                        Console.Error.WriteLine(str1);
+                    }
+                    catch
+                    {
                     }
                 }
                 Environment.Exit(1);

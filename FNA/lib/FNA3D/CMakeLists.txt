@@ -1,12 +1,13 @@
 # CMake Project for FNA3D
 # Written by @NeroBurner
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 project(FNA3D C)
 
 # Options
 option(BUILD_SHARED_LIBS "Build shared library" ON)
 option(TRACING_SUPPORT "Build with tracing enabled" OFF)
 option(BUILD_DXVK_NATIVE "Enable support for dxvk-native" OFF)
+option(USE_SDL3 "Build FNA3D against SDL3" OFF)
 
 # Version
 SET(LIB_MAJOR_VERSION "0")
@@ -39,10 +40,16 @@ elseif(WIN32)
 endif()
 
 # Defines
-add_definitions(
-	-DFNA3D_DRIVER_VULKAN
-	-DFNA3D_DRIVER_OPENGL
-)
+if(USE_SDL3)
+	add_definitions(
+		-DFNA3D_DRIVER_OPENGL
+	)
+else()
+	add_definitions(
+		-DFNA3D_DRIVER_VULKAN
+		-DFNA3D_DRIVER_OPENGL
+	)
+endif()
 add_definitions(
 	-DMOJOSHADER_NO_VERSION_INCLUDE
 	-DMOJOSHADER_USE_SDL_STDLIB
@@ -85,6 +92,7 @@ add_library(FNA3D
 	# Public Headers
 	include/FNA3D.h
 	include/FNA3D_Image.h
+	src/FNA3D_SDL.h
 	# Internal Headers
 	src/FNA3D_Driver.h
 	src/FNA3D_Driver_OpenGL.h
@@ -95,15 +103,21 @@ add_library(FNA3D
 	src/FNA3D_PipelineCache.h
 	# Source Files
 	src/FNA3D.c
-	src/FNA3D_Driver_D3D11.c
 	src/FNA3D_Driver_OpenGL.c
-	src/FNA3D_Driver_Vulkan.c
 	src/FNA3D_Image.c
 	src/FNA3D_CommandBuffer.c
 	src/FNA3D_Memory.c
 	src/FNA3D_PipelineCache.c
 	src/FNA3D_Tracing.c
 )
+if (NOT USE_SDL3)
+	target_sources(FNA3D PRIVATE
+		src/FNA3D_Driver_D3D11.c
+		src/FNA3D_Driver_Vulkan.c
+	)
+elseif (WIN32 OR BUILD_DXVK_NATIVE)
+	target_sources(FNA3D PRIVATE src/FNA3D_Driver_D3D11.c)
+endif()
 add_library(mojoshader STATIC
 	MojoShader/mojoshader.c
 	MojoShader/mojoshader_effects.c
@@ -170,27 +184,58 @@ set_target_properties(FNA3D PROPERTIES OUTPUT_NAME "FNA3D"
 # Internal Dependencies
 target_link_libraries(FNA3D PRIVATE mojoshader ${LOBJC})
 
-# SDL2 Dependency
-if (DEFINED SDL2_INCLUDE_DIRS AND DEFINED SDL2_LIBRARIES)
-	message(STATUS "using pre-defined SDL2 variables SDL2_INCLUDE_DIRS and SDL2_LIBRARIES")
-	target_include_directories(FNA3D PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
-	target_include_directories(mojoshader PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
-	target_link_libraries(FNA3D PUBLIC ${SDL2_LIBRARIES})
-else()
-	# Only try to autodetect if both SDL2 variables aren't explicitly set
-	find_package(SDL2 CONFIG)
-	if (TARGET SDL2::SDL2)
-		message(STATUS "using TARGET SDL2::SDL2")
-		target_link_libraries(FNA3D PUBLIC SDL2::SDL2)
-		target_link_libraries(mojoshader PUBLIC SDL2::SDL2)
-	elseif (TARGET SDL2)
-		message(STATUS "using TARGET SDL2")
-		target_link_libraries(FNA3D PUBLIC SDL2)
-		target_link_libraries(mojoshader PUBLIC SDL2)
+# SDL dependency
+if (USE_SDL3)
+	add_definitions(-DFNA3D_USE_SDL3)
+	if (DEFINED SDL3_INCLUDE_DIRS AND DEFINED SDL3_LIBRARIES)
+		message(STATUS "using pre-defined SDL3 variables SDL3_INCLUDE_DIRS and SDL3_LIBRARIES")
+		target_include_directories(FNA3D PUBLIC "$<BUILD_INTERFACE:${SDL3_INCLUDE_DIRS}>")
+		target_include_directories(mojoshader PUBLIC "$<BUILD_INTERFACE:${SDL3_INCLUDE_DIRS}>")
+		target_link_libraries(FNA3D PUBLIC ${SDL3_LIBRARIES})
+	elseif (DEFINED SDL3_INCLUDE_DIR AND DEFINED SDL3_LIBRARY)
+		message(STATUS "using pre-defined SDL3 variables SDL3_INCLUDE_DIR and SDL3_LIBRARY")
+		target_include_directories(FNA3D PUBLIC "$<BUILD_INTERFACE:${SDL3_INCLUDE_DIR}>")
+		target_include_directories(mojoshader PUBLIC "$<BUILD_INTERFACE:${SDL3_INCLUDE_DIR}>")
+		target_link_libraries(FNA3D PUBLIC ${SDL3_LIBRARY})
 	else()
-		message(STATUS "no TARGET SDL2::SDL2, or SDL2, using variables")
+		find_package(SDL3 CONFIG REQUIRED)
+		if (TARGET SDL3::SDL3)
+			message(STATUS "using TARGET SDL3::SDL3")
+			target_link_libraries(FNA3D PUBLIC SDL3::SDL3)
+			target_link_libraries(mojoshader PUBLIC SDL3::SDL3)
+		elseif (TARGET SDL3::SDL3-shared)
+			message(STATUS "using TARGET SDL3::SDL3-shared")
+			target_link_libraries(FNA3D PUBLIC SDL3::SDL3-shared)
+			target_link_libraries(mojoshader PUBLIC SDL3::SDL3-shared)
+		elseif (TARGET SDL3)
+			message(STATUS "using TARGET SDL3")
+			target_link_libraries(FNA3D PUBLIC SDL3)
+			target_link_libraries(mojoshader PUBLIC SDL3)
+		else()
+			message(FATAL_ERROR "SDL3 requested but no supported SDL3 CMake target was found")
+		endif()
+	endif()
+else()
+	if (DEFINED SDL2_INCLUDE_DIRS AND DEFINED SDL2_LIBRARIES)
+		message(STATUS "using pre-defined SDL2 variables SDL2_INCLUDE_DIRS and SDL2_LIBRARIES")
 		target_include_directories(FNA3D PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
 		target_include_directories(mojoshader PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
 		target_link_libraries(FNA3D PUBLIC ${SDL2_LIBRARIES})
+	else()
+		find_package(SDL2 CONFIG)
+		if (TARGET SDL2::SDL2)
+			message(STATUS "using TARGET SDL2::SDL2")
+			target_link_libraries(FNA3D PUBLIC SDL2::SDL2)
+			target_link_libraries(mojoshader PUBLIC SDL2::SDL2)
+		elseif (TARGET SDL2)
+			message(STATUS "using TARGET SDL2")
+			target_link_libraries(FNA3D PUBLIC SDL2)
+			target_link_libraries(mojoshader PUBLIC SDL2)
+		else()
+			message(STATUS "no TARGET SDL2::SDL2, or SDL2, using variables")
+			target_include_directories(FNA3D PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
+			target_include_directories(mojoshader PUBLIC "$<BUILD_INTERFACE:${SDL2_INCLUDE_DIRS}>")
+			target_link_libraries(FNA3D PUBLIC ${SDL2_LIBRARIES})
+		endif()
 	endif()
 endif()

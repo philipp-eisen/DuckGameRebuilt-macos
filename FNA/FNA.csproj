@@ -480,4 +480,7 @@
       <LogicalName>Microsoft.Xna.Framework.Graphics.Effect.Resources.YUVToRGBAEffectR.fxb</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="app.config" DestinationFiles="$(TargetPath).config" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

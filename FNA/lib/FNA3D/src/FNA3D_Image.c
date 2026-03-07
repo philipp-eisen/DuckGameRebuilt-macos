@@ -26,7 +26,7 @@
 
 #include "FNA3D_Image.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 extern void FNA3D_LogWarn(const char *fmt, ...);
 
@@ -91,9 +91,15 @@ extern void FNA3D_LogWarn(const char *fmt, ...);
 #define STBI_NO_STDIO
 #define STB_IMAGE_STATIC
 #define STBI_ASSERT SDL_assert
+#ifdef FNA3D_USE_SDL3
+#define STBI_MALLOC SDL_malloc
+#define STBI_REALLOC SDL_realloc
+#define STBI_FREE SDL_free
+#else
 #define STBI_MALLOC SDL_SIMDAlloc
 #define STBI_REALLOC SDL_SIMDRealloc
 #define STBI_FREE SDL_SIMDFree
+#endif
 #define STB_IMAGE_IMPLEMENTATION
 #ifdef __MINGW32__
 #define STBI_NO_THREAD_LOCALS /* FIXME: Port to SDL_TLS -flibit */
@@ -298,7 +304,11 @@ uint8_t* FNA3D_Image_Load(
 
 void FNA3D_Image_Free(uint8_t *mem)
 {
+#ifdef FNA3D_USE_SDL3
+	SDL_free(mem);
+#else
 	SDL_SIMDFree(mem);
+#endif
 }
 
 /* Image Write API */

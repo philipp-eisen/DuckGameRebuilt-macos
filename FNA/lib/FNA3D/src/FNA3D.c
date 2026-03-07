@@ -27,7 +27,7 @@
 #include "FNA3D_Driver.h"
 #include "FNA3D_Tracing.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 #if !SDL_VERSION_ATLEAST(2, 26, 0)
 #error "SDL version older than 2.26.0"

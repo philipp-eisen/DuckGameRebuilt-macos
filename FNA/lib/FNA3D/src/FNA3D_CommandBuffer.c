@@ -26,7 +26,7 @@
 
 #include "FNA3D_CommandBuffer.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 #define STARTING_TRANSFER_BUFFER_SIZE 8000000 /* 8MB */
 #define FAST_TRANSFER_SIZE 64000000 /* 64MB */
