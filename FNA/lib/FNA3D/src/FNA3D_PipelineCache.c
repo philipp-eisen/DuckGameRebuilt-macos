@@ -26,7 +26,7 @@
 
 #include "FNA3D_PipelineCache.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 /* Packed Pipeline States */
 

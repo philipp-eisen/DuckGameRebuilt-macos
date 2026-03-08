@@ -29,10 +29,10 @@
 #include "FNA3D_Driver.h"
 #include "FNA3D_Driver_OpenGL.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 /* We only use this to detect UIKit, for backbuffer creation */
-#ifdef SDL_VIDEO_DRIVER_UIKIT
+#if defined(SDL_VIDEO_DRIVER_UIKIT) && !defined(FNA3D_USE_SDL3)
 #include <SDL_syswm.h>
 #endif /* SDL_VIDEO_DRIVER_UIKIT */
 

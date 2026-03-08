@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIGURATION="${1:-Debug}"
 CPU_COUNT="$(sysctl -n hw.ncpu)"
-CMAKE_POLICY_VERSION_MINIMUM="${CMAKE_POLICY_VERSION_MINIMUM:-3.5}"
+CMAKE_POLICY_VERSION_MINIMUM="${CMAKE_POLICY_VERSION_MINIMUM:-3.10}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -50,6 +50,46 @@ copy_sdl2_dylib() {
   fi
 
   cp -f "$sdl2_dylib" "$ROOT_DIR/bin/libSDL2-2.0.0.dylib"
+}
+
+copy_sdl3_dylib() {
+  local sdl3_dylib=""
+  local brew_prefix=""
+
+  if [[ -n "${SDL3_DYLIB:-}" && -f "$SDL3_DYLIB" ]]; then
+    sdl3_dylib="$SDL3_DYLIB"
+  fi
+
+  if [[ -z "$sdl3_dylib" ]] && command -v pkg-config >/dev/null 2>&1; then
+    local sdl3_libdir
+    sdl3_libdir="$(pkg-config --variable=libdir sdl3 2>/dev/null || true)"
+    if [[ -n "$sdl3_libdir" && -f "$sdl3_libdir/libSDL3.0.dylib" ]]; then
+      sdl3_dylib="$sdl3_libdir/libSDL3.0.dylib"
+    fi
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    brew_prefix="$(brew --prefix sdl3 2>/dev/null || true)"
+    if [[ -n "$brew_prefix" && -f "$brew_prefix/lib/libSDL3.0.dylib" ]]; then
+      sdl3_dylib="$brew_prefix/lib/libSDL3.0.dylib"
+    fi
+  fi
+
+  if [[ -z "$sdl3_dylib" && -f "/opt/homebrew/lib/libSDL3.0.dylib" ]]; then
+    sdl3_dylib="/opt/homebrew/lib/libSDL3.0.dylib"
+  fi
+
+  if [[ -z "$sdl3_dylib" && -f "/usr/local/lib/libSDL3.0.dylib" ]]; then
+    sdl3_dylib="/usr/local/lib/libSDL3.0.dylib"
+  fi
+
+  if [[ -z "$sdl3_dylib" ]]; then
+    echo "Could not find libSDL3.0.dylib. Install sdl3 first (brew install sdl3)." >&2
+    exit 1
+  fi
+
+  cp -f "$sdl3_dylib" "$ROOT_DIR/bin/libSDL3.0.dylib"
+  ln -sf "libSDL3.0.dylib" "$ROOT_DIR/bin/libSDL3.dylib"
 }
 
 copy_libgdiplus_dylib() {
@@ -102,14 +142,14 @@ require_command cmake
 require_command make
 require_command mono
 
-echo "[1/4] Restoring NuGet packages"
+echo "[1/6] Restoring NuGet packages"
 nuget restore "$ROOT_DIR/DuckGame.sln"
 
-echo "[2/4] Building native macOS libraries"
+echo "[2/6] Building native macOS libraries"
 cmake -S "$ROOT_DIR/FNA/lib/FAudio" -B "$ROOT_DIR/FNA/lib/FAudio/build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="$CMAKE_POLICY_VERSION_MINIMUM"
 cmake --build "$ROOT_DIR/FNA/lib/FAudio/build" --config Release --parallel "$CPU_COUNT"
 
-cmake -S "$ROOT_DIR/FNA/lib/FNA3D" -B "$ROOT_DIR/FNA/lib/FNA3D/build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="$CMAKE_POLICY_VERSION_MINIMUM"
+cmake -S "$ROOT_DIR/FNA/lib/FNA3D" -B "$ROOT_DIR/FNA/lib/FNA3D/build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="$CMAKE_POLICY_VERSION_MINIMUM" -DUSE_SDL3=ON
 cmake --build "$ROOT_DIR/FNA/lib/FNA3D/build" --config Release --parallel "$CPU_COUNT"
 
 make -C "$ROOT_DIR/FNA/lib/Theorafile"
@@ -143,11 +183,14 @@ for lib_file in "$ROOT_DIR"/DuckGame/lib/*; do
   cp -f "$lib_file" "$ROOT_DIR/bin/"
 done
 cp -f "$ROOT_DIR/FNA/obj/x86/$CONFIGURATION/FNA.dll" "$ROOT_DIR/bin/FNA.dll"
+cp -f "$ROOT_DIR/FNA/app.config" "$ROOT_DIR/bin/FNA.dll.config"
 cp -f "$ROOT_DIR/Steam/obj/x86/$CONFIGURATION/DGSteam.dll" "$ROOT_DIR/bin/DGSteam.dll"
 cp -f "$ROOT_DIR/FNA/lib/FAudio/build/libFAudio.0.dylib" "$ROOT_DIR/bin/"
-cp -f "$ROOT_DIR/FNA/lib/FNA3D/build/libFNA3D.0.dylib" "$ROOT_DIR/bin/"
+cp -f "$ROOT_DIR/FNA/lib/FNA3D/build/libFNA3D.0.dylib" "$ROOT_DIR/bin/libFNA3D.0.dylib"
+ln -sf "libFNA3D.0.dylib" "$ROOT_DIR/bin/libFNA3D.dylib"
 cp -f "$ROOT_DIR/FNA/lib/Theorafile/libtheorafile.dylib" "$ROOT_DIR/bin/"
 copy_sdl2_dylib
+copy_sdl3_dylib
 copy_libgdiplus_dylib
 cp -f "$ROOT_DIR/deps/steam_api.bundle/Contents/MacOS/libsteam_api.dylib" "$ROOT_DIR/bin/libsteam_api.dylib"
 

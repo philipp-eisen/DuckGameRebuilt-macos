@@ -29,7 +29,7 @@
 #include "mojoshader.h"
 #include "FNA3D_Tracing.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 static const uint8_t MARK_CREATEDEVICE			= 0;
 static const uint8_t MARK_DESTROYDEVICE			= 1;

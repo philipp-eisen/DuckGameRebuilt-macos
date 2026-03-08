@@ -26,7 +26,7 @@
 
 #include "FNA3D_Memory.h"
 
-#include <SDL.h>
+#include "FNA3D_SDL.h"
 
 /*
  * Memory Allocator

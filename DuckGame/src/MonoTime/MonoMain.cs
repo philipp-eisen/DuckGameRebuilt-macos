@@ -358,7 +358,7 @@ namespace DuckGame
         {
             try
             {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("http://www.wonthelp.info/DuckWeb/getCape.php?sendRequest=IWannaUseADangOlCape&id=" + data));
+                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("https://www.wonthelp.info/DuckWeb/getCape.php?sendRequest=IWannaUseADangOlCape&id=" + data));
                 httpWebRequest.Credentials = CredentialCache.DefaultCredentials;
                 HttpWebResponse response = (HttpWebResponse)httpWebRequest.GetResponse();
                 string str = "";
@@ -399,7 +399,7 @@ namespace DuckGame
         {
             try
             {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("http://www.wonthelp.info/crappydoodle/getTotallyRandomImage2.php?sendRequest=crappyDoodles&id=" + Rando.Int(112215).ToString()));
+                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("https://www.wonthelp.info/crappydoodle/getTotallyRandomImage2.php?sendRequest=crappyDoodles&id=" + Rando.Int(112215).ToString()));
                 httpWebRequest.Credentials = CredentialCache.DefaultCredentials;
                 HttpWebResponse response = (HttpWebResponse)httpWebRequest.GetResponse();
                 if (response.StatusCode == HttpStatusCode.OK)
@@ -431,7 +431,7 @@ namespace DuckGame
         {
             try
             {
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("http://www.wonthelp.info/mangaka/getTotallyRandomCharacter.php?sendRequest=charzone&id=" + Rando.Int(464).ToString()));
+                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(string.Format("https://www.wonthelp.info/mangaka/getTotallyRandomCharacter.php?sendRequest=charzone&id=" + Rando.Int(464).ToString()));
                 httpWebRequest.Credentials = CredentialCache.DefaultCredentials;
                 HttpWebResponse response = (HttpWebResponse)httpWebRequest.GetResponse();
                 if (response.StatusCode == HttpStatusCode.OK)
@@ -649,8 +649,8 @@ namespace DuckGame
                 };
                 Resolution.Set(r);
                 Resolution.Apply();
-                SDL.SDL_SetWindowBordered(instance.Window.Handle, SDL.SDL_bool.SDL_FALSE);
-                SDL.SDL_SetWindowPosition(instance.Window.Handle, (int)Program.StartPos.x, (int)Program.StartPos.y);
+                FNAPlatform.SetWindowBordered(instance.Window.Handle, false);
+                FNAPlatform.SetWindowPosition(instance.Window.Handle, (int)Program.StartPos.x, (int)Program.StartPos.y);
             }
             _screenCapture = new RenderTarget2D(Resolution.current.x, Resolution.current.y, true);
             _duckRun = new SpriteMap("duck", 32, 32);
@@ -1155,7 +1155,17 @@ namespace DuckGame
         }
         public bool IsFocused
         {
-            get => (SDL.SDL_GetWindowFlags(Window.Handle) & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS) > 0;
+
+            get
+            {
+                ulong flags = FNAPlatform.GetWindowFlags(Window.Handle);
+
+                // Check the input focus bit
+                return (flags & (ulong)SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS) != 0; // SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS is the same as the SDL3 version
+
+                // ulong b = FNAPlatform.GetWindowFlags(Window.Handle);
+                // return  (SDL.SDL_GetWindowFlags(Window.Handle) & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS) > 0;
+            }
         }
         public bool initializedFPS;
 

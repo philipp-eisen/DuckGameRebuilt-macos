@@ -16,6 +16,7 @@ using SDL2;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using Microsoft.Xna.Framework;
 
 namespace DuckGame
 {
@@ -221,7 +222,7 @@ namespace DuckGame
                 return;
 
             HttpWebRequest httpWebRequest =
-                (HttpWebRequest)WebRequest.Create("http://www.wonthelp.info/DuckWeb/submitSave.php");
+                (HttpWebRequest)WebRequest.Create("https://www.wonthelp.info/DuckWeb/submitSave.php");
             httpWebRequest.Method = "POST";
             string str =
                 $"sendRequest=DGBugLogger&steamID={CrashWindow.CrashWindow.SQLEncode(Steam.user.id.ToString())}";
@@ -1302,7 +1303,7 @@ namespace DuckGame
                     {
                         if (!string.IsNullOrWhiteSpace(_core.Typing))
                         {
-                            Thread thread = new(() => SDL.SDL_SetClipboardText(_core.Typing));
+                            Thread thread = new(() => FNAPlatform.SetClipboardText(_core.Typing));
                             thread.SetApartmentState(ApartmentState.STA);
                             thread.Start();
                             thread.Join();
@@ -1312,7 +1313,7 @@ namespace DuckGame
                     else if (Keyboard.Pressed(Keys.V))
                     {
                         string paste = "";
-                        Thread thread = new(() => paste = SDL.SDL_GetClipboardText());
+                        Thread thread = new(() => paste = FNAPlatform.GetClipboardText());
                         thread.SetApartmentState(ApartmentState.STA);
                         thread.Start();
                         thread.Join();
